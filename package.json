@@ -1,0 +1,34 @@
+{
+  "name": "voipms-monitor",
+  "version": "1.0.0",
+  "description": "Monitor voip.ms registration status",
+  "main": "built/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "tslint \"src/**/*.ts\"",
+    "compile": "tsc",
+    "build": "npm run lint && npm run compile"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nsutclif/voipms-monitor.git"
+  },
+  "author": "Nathan Sutcliffe",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/nsutclif/voipms-monitor/issues"
+  },
+  "homepage": "https://github.com/nsutclif/voipms-monitor#readme",
+  "dependencies": {
+    "request": "2.81.0",
+    "request-promise-native": "1.0.4"
+  },
+  "devDependencies": {
+    "aws-sdk": "2.53.0",
+    "tslint": "5.2.0",
+    "typescript": "2.3.2",
+    "@types/node": "6.0.73",
+    "@types/aws-lambda": "0.0.10",
+    "@types/request-promise-native": "1.0.5"
+  }
+}
