@@ -1,4 +1,5 @@
 built/
+.vscode/launch.json
 
 # Original .gitignore from GitHub below:
 
