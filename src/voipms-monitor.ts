@@ -21,24 +21,49 @@ interface RegistrationStatus {
     registrations: Registration[];
 }
 
-export function requestRegistrationStatus(
+interface FocusedRegistration {
+    server_shortname: string;
+    register_ip: string;
+}
+
+interface FocusedRegistrationStatus {
+    registered: string;
+    registrations: FocusedRegistration[];
+}
+
+function requestRegistrationStatus(
     user: string,
     password: string,
     account: string,
 ): Promise<RegistrationStatus> {
     const rpcURL: string =
-      "https://voip.ms/api/v1/rest.php?" +
-      "api_username=" + user +
-      "&api_password=" + password +
-      "&method=getRegistrationStatus" +
-      "&account=" + account;
+        "https://voip.ms/api/v1/rest.php?" +
+        "api_username=" + user +
+        "&api_password=" + password +
+        "&method=getRegistrationStatus" +
+        "&account=" + account;
     return rpn(rpcURL).then( (result: string) => {
         return JSON.parse(result);
     });
 }
 
+function getRegistrationForComparison(status: RegistrationStatus): FocusedRegistrationStatus {
+    return {
+        registered: status.registered,
+        registrations: status.registrations.map((registration: Registration): FocusedRegistration => {
+            return {
+                server_shortname: registration.server_shortname,
+                register_ip: registration.register_ip,
+            };
+        }),
+    };
+}
+
 export function pollVoipms(user: string, password, account: string): Promise<void> {
     return requestRegistrationStatus(user, password, account).then( (status: RegistrationStatus) => {
         console.log(JSON.stringify(status));
+
+        const focusedRegistration: FocusedRegistrationStatus = getRegistrationForComparison(status);
+        console.log(JSON.stringify(focusedRegistration));
     });
 }
