@@ -1,6 +1,16 @@
 AWSTemplateFormatVersion : '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: A hello world application.
+Parameters:
+  VoipMSUser:
+    Type: String
+    Default: ""
+  VoipMSPassword:
+    Type: String
+    Default: ""
+  VoipMSAccount:
+    Type: String
+    Default: ""
 Resources:
   PollVoipMSFunction:
     Type: AWS::Serverless::Function
@@ -8,3 +18,11 @@ Resources:
       Handler: built/index.handler
       Runtime: nodejs6.10
       CodeUri: ./
+      Environment:
+        Variables:
+          USER:
+            Ref: VoipMSUser
+          PASSWORD:
+            Ref: VoipMSPassword
+          ACCOUNT:
+            Ref: VoipMSAccount
