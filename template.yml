@@ -26,3 +26,26 @@ Resources:
             Ref: VoipMSPassword
           ACCOUNT:
             Ref: VoipMSAccount
+          # Tell the Lambda function which table to use:
+          ACCOUNT_REGISTRATION_STATUS_TABLE_NAME:
+            Ref: AccountRegistrationStatus
+      Policies:
+        - AWSLambdaExecute # Managed Policy
+        # Allow the Lambda function to use the table:
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:GetItem
+                - dynamodb:PutItem
+              Resource:
+                Fn::Sub: arn:aws:dynamodb:::table/${AccountRegistrationStatus}
+  AccountRegistrationStatus:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      PrimaryKey:
+        Name: account
+        Type: String
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1

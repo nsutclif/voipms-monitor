@@ -1,5 +1,6 @@
 built/
 .vscode/launch.json
+packaged-template.yml
 
 # Original .gitignore from GitHub below:
 
