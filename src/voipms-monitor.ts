@@ -1,5 +1,5 @@
 import * as AWS from "aws-sdk";
-import { DocumentClient, GetItemInput, GetItemOutput } from "aws-sdk/clients/dynamodb";
+import { DocumentClient, GetItemInput, GetItemOutput, PutItemInput } from "aws-sdk/clients/dynamodb";
 import * as rpn from "request-promise-native";
 
 // "https://voip.ms/api/v1/rest.php
@@ -70,14 +70,38 @@ function getPreviousRegistration(
     tableName: string,
     account: string,
 ): Promise<FocusedRegistrationStatus> {
-    return Promise.resolve().then( () => {
+    return Promise.resolve().then(() => {
         const requestParams: GetItemInput = {
             TableName: tableName,
             Key: { account },
         };
         return documentClient.get(requestParams).promise();
     }).then((dynamoResult: GetItemOutput) => {
-        return getRegistrationForComparison(dynamoResult.Item as any);
+        if (dynamoResult.Item) {
+            return getRegistrationForComparison(dynamoResult.Item.registrationStatus as any);
+        } else {
+            return Promise.resolve(undefined);
+        }
+    });
+}
+
+function saveRegistration(
+    documentClient: DocumentClient,
+    tableName: string,
+    account: string,
+    registrationStatus: FocusedRegistrationStatus,
+): Promise<void> {
+    return Promise.resolve().then(() => {
+        const requestParams: PutItemInput = {
+            TableName: tableName,
+            Item: {
+                account,
+                registrationStatus,
+            },
+        };
+        return documentClient.put(requestParams).promise();
+    }).then(() => {
+        return Promise.resolve();
     });
 }
 
@@ -94,8 +118,12 @@ export function pollVoipms(
         getPreviousRegistration(documentClient, registrationStatusTableName, account),
         requestCurrentRegistrationStatus(user, password, account),
     ]).then( (results: FocusedRegistrationStatus[]) => {
+        const previousStatus: FocusedRegistrationStatus = results[0];
+        const currentStatus: FocusedRegistrationStatus = results[1];
 
-
-        console.log(JSON.stringify(results));
+        if (JSON.stringify(previousStatus) !== JSON.stringify(currentStatus)) {
+            console.log("Difference detected");
+            return saveRegistration(documentClient, registrationStatusTableName, account, currentStatus);
+        }
     });
 }
