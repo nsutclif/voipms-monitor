@@ -81,9 +81,10 @@ export function pollVoipms(
     user: string,
     password: string,
     account: string,
+    region: string,
     registrationStatusTableName: string,
 ): Promise<void> {
-    const documentClient = new AWS.DynamoDB.DocumentClient();
+    const documentClient = new AWS.DynamoDB.DocumentClient({region});
 
     return Promise.all([
         getPreviousRegistration(documentClient, registrationStatusTableName, account),
