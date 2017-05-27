@@ -1,5 +1,6 @@
 import * as AWS from "aws-sdk";
 import { DocumentClient, GetItemInput, GetItemOutput, PutItemInput } from "aws-sdk/clients/dynamodb";
+import { PublishInput } from "aws-sdk/clients/sns";
 import * as rpn from "request-promise-native";
 
 // "https://voip.ms/api/v1/rest.php
@@ -105,12 +106,34 @@ function saveRegistration(
     });
 }
 
+function publishChange(
+    previousStatus: FocusedRegistrationStatus,
+    currentStatus: FocusedRegistrationStatus,
+    region: string,
+    registrationStatusChangeTopic: string,
+): Promise<void> {
+    const sns = new AWS.SNS({region});
+    return Promise.resolve().then(() => {
+        const requestParams: PublishInput = {
+            Message:
+                "Voip.ms registration status has changed.\n" +
+                "Previous Status: " + JSON.stringify(previousStatus) + "\n" +
+                "Current Status: " + JSON.stringify(currentStatus),
+            TopicArn: registrationStatusChangeTopic,
+        };
+        return sns.publish(requestParams).promise();
+    }).then(() => {
+        return Promise.resolve();
+    });
+}
+
 export function pollVoipms(
     user: string,
     password: string,
     account: string,
     region: string,
     registrationStatusTableName: string,
+    registrationStatusChangeTopic: string,
 ): Promise<void> {
     const documentClient = new AWS.DynamoDB.DocumentClient({region});
 
@@ -123,7 +146,14 @@ export function pollVoipms(
 
         if (JSON.stringify(previousStatus) !== JSON.stringify(currentStatus)) {
             console.log("Difference detected");
-            return saveRegistration(documentClient, registrationStatusTableName, account, currentStatus);
+            return Promise.all([
+                saveRegistration(documentClient, registrationStatusTableName, account, currentStatus),
+                publishChange(previousStatus, currentStatus, region, registrationStatusChangeTopic),
+            ]);
+        } else {
+            console.log("No Difference");
         }
+    }).then(() => {
+        return;
     });
 }

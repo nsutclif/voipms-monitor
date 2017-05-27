@@ -31,17 +31,20 @@ Resources:
           # Tell the Lambda function which table to use:
           ACCOUNT_REGISTRATION_STATUS_TABLE_NAME:
             Ref: AccountRegistrationStatus
+          REGISTRATION_STATUS_CHANGE_TOPIC:
+            Ref: RegistrationStatusChangeTopic
       Policies:
         - AWSLambdaExecute # Managed Policy
-        # Allow the Lambda function to use the table:
         - Version: "2012-10-17"
           Statement:
+            # Allow the Lambda function to use the table:
             - Effect: Allow
               Action:
                 - dynamodb:GetItem
                 - dynamodb:PutItem
               Resource:
                 Fn::Sub: arn:aws:dynamodb:::table/${AccountRegistrationStatus}
+            # Allow the Lambda function to pubish to the SNS topic:
             - Effect: Allow
               Action:
                 - sns:Publish
