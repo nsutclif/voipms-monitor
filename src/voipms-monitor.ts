@@ -50,15 +50,19 @@ function requestCurrentRegistrationStatus(
 }
 
 function getRegistrationForComparison(status: RegistrationStatus): FocusedRegistrationStatus {
-    return {
-        registered: status.registered,
-        registrations: status.registrations.map((registration: Registration): FocusedRegistration => {
-            return {
-                server_shortname: registration.server_shortname,
-                register_ip: registration.register_ip,
-            };
-        }),
-    };
+    if (status) {
+        return {
+            registered: status.registered,
+            registrations: status.registrations.map((registration: Registration): FocusedRegistration => {
+                return {
+                    server_shortname: registration.server_shortname,
+                    register_ip: registration.register_ip,
+                };
+            }),
+        };
+    } else {
+        return;
+    }
 }
 
 function getPreviousRegistration(
@@ -72,7 +76,7 @@ function getPreviousRegistration(
             Key: { account },
         };
         return documentClient.get(requestParams).promise();
-    }).then( (dynamoResult: GetItemOutput) => {
+    }).then((dynamoResult: GetItemOutput) => {
         return getRegistrationForComparison(dynamoResult.Item as any);
     });
 }
