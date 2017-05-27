@@ -94,6 +94,8 @@ export function pollVoipms(
         getPreviousRegistration(documentClient, registrationStatusTableName, account),
         requestCurrentRegistrationStatus(user, password, account),
     ]).then( (results: FocusedRegistrationStatus[]) => {
-        console.log(results);
+
+
+        console.log(JSON.stringify(results));
     });
 }
