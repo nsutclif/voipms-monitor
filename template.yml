@@ -11,6 +11,8 @@ Parameters:
   VoipMSAccount:
     Type: String
     Default: ""
+  NotificationEmail:
+    Type: String
 Resources:
   PollVoipMSFunction:
     Type: AWS::Serverless::Function
@@ -40,6 +42,11 @@ Resources:
                 - dynamodb:PutItem
               Resource:
                 Fn::Sub: arn:aws:dynamodb:::table/${AccountRegistrationStatus}
+            - Effect: Allow
+              Action:
+                - sns:Publish
+              Resource:
+                Ref: RegistrationStatusChangeTopic
   AccountRegistrationStatus:
     Type: AWS::Serverless::SimpleTable
     Properties:
@@ -49,3 +56,10 @@ Resources:
       ProvisionedThroughput:
         ReadCapacityUnits: 1
         WriteCapacityUnits: 1
+  RegistrationStatusChangeTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      Subscription:
+      - Protocol: email
+        Endpoint:
+          Ref: NotificationEmail
