@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion : '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: A hello world application.
+Description: A serverless application for monitoring Voip.ms registration status.
 Parameters:
   VoipMSUser:
     Type: String
@@ -13,6 +13,10 @@ Parameters:
     Default: ""
   NotificationEmail:
     Type: String
+  IntervalMinutes:
+    Type: Number
+    Default: 5
+    MinValue: 2 # 1 doesn't work with Schedule expression as is
 Resources:
   PollVoipMSFunction:
     Type: AWS::Serverless::Function
@@ -43,13 +47,19 @@ Resources:
                 - dynamodb:GetItem
                 - dynamodb:PutItem
               Resource:
-                Fn::Sub: arn:aws:dynamodb:::table/${AccountRegistrationStatus}
+                Fn::Sub: arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${AccountRegistrationStatus}
             # Allow the Lambda function to pubish to the SNS topic:
             - Effect: Allow
               Action:
                 - sns:Publish
               Resource:
                 Ref: RegistrationStatusChangeTopic
+      Events:
+        PollEvent:
+          Properties:
+            Schedule:
+              Fn::Sub: rate(${IntervalMinutes} minutes)
+          Type: Schedule
   AccountRegistrationStatus:
     Type: AWS::Serverless::SimpleTable
     Properties:

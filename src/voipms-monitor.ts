@@ -76,6 +76,7 @@ function getPreviousRegistration(
             TableName: tableName,
             Key: { account },
         };
+        console.log("Gettting Previous Registration: " + JSON.stringify(requestParams));
         return documentClient.get(requestParams).promise();
     }).then((dynamoResult: GetItemOutput) => {
         if (dynamoResult.Item) {
@@ -100,6 +101,7 @@ function saveRegistration(
                 registrationStatus,
             },
         };
+        console.log("Saving Previous Registration: " + JSON.stringify(requestParams));
         return documentClient.put(requestParams).promise();
     }).then(() => {
         return Promise.resolve();
@@ -115,12 +117,14 @@ function publishChange(
     const sns = new AWS.SNS({region});
     return Promise.resolve().then(() => {
         const requestParams: PublishInput = {
+            Subject: "Voip.ms registration status change",
             Message:
                 "Voip.ms registration status has changed.\n" +
                 "Previous Status: " + JSON.stringify(previousStatus) + "\n" +
                 "Current Status: " + JSON.stringify(currentStatus),
             TopicArn: registrationStatusChangeTopic,
         };
+        console.log("Publishing to SNS Topic: " + JSON.stringify(requestParams));
         return sns.publish(requestParams).promise();
     }).then(() => {
         return Promise.resolve();
@@ -135,6 +139,11 @@ export function pollVoipms(
     registrationStatusTableName: string,
     registrationStatusChangeTopic: string,
 ): Promise<void> {
+    if (!user || !password || !account) {
+        return Promise.reject("Must provide a user, password and account");
+    }
+
+    console.log("Creating document client in region: " + region);
     const documentClient = new AWS.DynamoDB.DocumentClient({region});
 
     return Promise.all([
