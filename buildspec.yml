@@ -1,0 +1,12 @@
+version: 0.2
+phases:
+  pre_build:
+    commands:
+      - npm install
+  build:
+    commands:
+      - npm run build
+  post_build:
+    commands:
+      - npm run preparepackage
+      - aws cloudformation package --template-file ./packaged/template.yml --s3-bucket voip-ms-monitor-build-artifacts --output_template-file ./packaged/packaged-tempate.yml
