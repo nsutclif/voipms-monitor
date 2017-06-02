@@ -16,5 +16,8 @@ phases:
           --template-file ./packaged/template.yml \
           --s3-bucket voip-ms-monitor-build-artifacts \
           --s3-prefix $CODEBUILD_RESOLVED_SOURCE_VERSION \
-          --output-template-file ./packaged/packaged-tempate.yml
-      - aws s3 cp ./packaged/packaged-tempate.yml voip-ms-monitor-build-artifacts/$CODEBUILD_RESOLVED_SOURCE_VERSION/packaged-template.yml
+          --output-template-file ./packaged/packaged-template.yml
+      - >
+        aws s3 cp \
+          ./packaged/packaged-template.yml \
+          s3://voip-ms-monitor-build-artifacts/$CODEBUILD_RESOLVED_SOURCE_VERSION/packaged-template.yml
