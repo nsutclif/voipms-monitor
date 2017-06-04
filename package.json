@@ -4,11 +4,11 @@
   "description": "Monitor voip.ms registration status",
   "main": "built/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "tslint \"src/**/*.ts\"",
     "compile": "tsc",
     "build": "npm run lint && npm run compile",
-    "preparepackage": "mkdir -p packaged && cp -r *.yml *.json built packaged && cd packaged && npm install --production"
+    "preparepackage": "mkdir -p packaged && cp -r *.yml *.json built packaged && cd packaged && npm install --production",
+    "test": "npm run build"
   },
   "repository": {
     "type": "git",
