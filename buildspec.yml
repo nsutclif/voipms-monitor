@@ -8,7 +8,7 @@ phases:
       - npm run build
   post_build:
     commands:
-      - printenv
+      # - printenv
       - echo $CODEBUILD_RESOLVED_SOURCE_VERSION
       - npm run preparepackage
       - >
