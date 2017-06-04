@@ -25,11 +25,11 @@
     "request-promise-native": "1.0.4"
   },
   "devDependencies": {
-    "aws-sdk": "2.53.0",
-    "tslint": "5.2.0",
-    "typescript": "2.3.2",
-    "@types/node": "6.0.73",
-    "@types/aws-lambda": "0.0.10",
+    "aws-sdk": "2.62.0",
+    "tslint": "5.4.2",
+    "typescript": "2.3.4",
+    "@types/node": "7.0.27",
+    "@types/aws-lambda": "0.0.11",
     "@types/request-promise-native": "1.0.5"
   }
 }
