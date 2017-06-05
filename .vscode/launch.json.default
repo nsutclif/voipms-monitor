@@ -16,6 +16,9 @@
                 "USER": "",
                 "PASSWORD": "",
                 "ACCOUNT": ""
+                "ACCOUNT_REGISTRATION_STATUS_TABLE_NAME": "",
+                "AWS_DEFAULT_REGION": "",
+                "REGISTRATION_STATUS_CHANGE_TOPIC": ""
             }
         }
     ]
