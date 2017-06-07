@@ -35,7 +35,7 @@
     "tslint": "5.4.3",
     "typescript": "2.3.4",
     "@types/node": "7.0.28",
-    "@types/aws-lambda": "0.0.11",
+    "@types/aws-lambda": "0.0.12",
     "@types/request-promise-native": "1.0.5"
   }
 }
