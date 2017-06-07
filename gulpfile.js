@@ -10,7 +10,17 @@ gulp.task('package', () =>
     gulp.src('packaged/**/*')
         .pipe(zip('packaged.zip'))
         .pipe(s3({
-          Bucket: 'voip-ms-monitor-build-artifacts'
+          // TODO: Don't hard-code this!
+          Bucket: 'lambci-buildresults-ga8wy7gvebrx',
+          keyTransform: (relative_filename) => {
+            return [ // TODO: Don't hard code this?
+              'gh',
+              process.env.LAMBCI_REPO,
+              'builds',
+              process.env.LAMBCI_BUILD_NUM,
+              relative_filename
+            ].join('/');
+          }
         }));
   }
 );
