@@ -26,13 +26,13 @@
     "request-promise-native": "1.0.4"
   },
   "devDependencies": {
-    "aws-sdk": "2.63.0",
+    "aws-sdk": "2.64.0",
     "gulp": "3.9.1",
     "gulp-s3-upload": "1.6.4",
     "gulp-zip": "4.0.0",
-    "tslint": "5.4.2",
+    "tslint": "5.4.3",
     "typescript": "2.3.4",
-    "@types/node": "7.0.27",
+    "@types/node": "7.0.28",
     "@types/aws-lambda": "0.0.11",
     "@types/request-promise-native": "1.0.5"
   }
