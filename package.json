@@ -28,8 +28,10 @@
   "devDependencies": {
     "aws-sdk": "2.64.0",
     "gulp": "3.9.1",
+    "gulp-modify-file": "0.1.0",
     "gulp-s3-upload": "1.6.4",
     "gulp-zip": "4.0.0",
+    "js-yaml": "3.8.4",
     "tslint": "5.4.3",
     "typescript": "2.3.4",
     "@types/node": "7.0.28",
