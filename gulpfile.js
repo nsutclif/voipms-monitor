@@ -11,13 +11,14 @@ const yaml = require('js-yaml');
 
 const BUCKET_NAME = 'lambci-buildresults-ga8wy7gvebrx'; // TODO: Don't hard-code this!
 const CODE_KEY_NAME = 'packaged.zip';
+const TEMPLATE_NAME = 'template.yml';
 
 function prependKeyPrefix(relative_filename) {
   return [ // TODO: Don't hard code this?
     'gh',
-    process.env.LAMBCI_REPO,
+    process.env.LAMBCI_REPO || 'nsutclif/voipms-monitor',
     'builds',
-    process.env.LAMBCI_BUILD_NUM,
+    process.env.LAMBCI_BUILD_NUM || 'local',
     relative_filename
   ].join('/');
 }
@@ -54,11 +55,20 @@ gulp.task('package', () =>
         Bucket: BUCKET_NAME,
         keyTransform: prependKeyPrefix
       }));
-    gulp.src('template.yml')
+    gulp.src(TEMPLATE_NAME)
       .pipe(modifyFile(updateArtifactPaths))
       .pipe(s3({
         Bucket: BUCKET_NAME,
         keyTransform: prependKeyPrefix
-      }));
+      }))
+      .on('end', () => {
+        console.log(
+          [
+            'https://s3.amazonaws.com',
+            BUCKET_NAME,
+            prependKeyPrefix(TEMPLATE_NAME)
+          ].join('/')
+        );
+      })
   }
 );
