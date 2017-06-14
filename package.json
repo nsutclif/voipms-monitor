@@ -26,7 +26,7 @@
     "request-promise-native": "1.0.4"
   },
   "devDependencies": {
-    "aws-sdk": "2.66.0",
+    "aws-sdk": "2.67.0",
     "gulp": "3.9.1",
     "gulp-modify-file": "0.1.0",
     "gulp-s3-upload": "1.6.4",
