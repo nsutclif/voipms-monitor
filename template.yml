@@ -71,8 +71,11 @@ Resources:
         WriteCapacityUnits: 1
   RegistrationStatusChangeTopic:
     Type: AWS::SNS::Topic
+  NotificationSubscription:
+    Type: AWS::SNS::Subscription
     Properties:
-      Subscription:
-      - Protocol: email
-        Endpoint:
-          Ref: NotificationEmail
+      Protocol: email
+      Endpoint:
+        Ref: NotificationEmail
+      TopicArn:
+        Ref: RegistrationStatusChangeTopic
