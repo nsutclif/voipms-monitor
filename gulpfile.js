@@ -11,7 +11,8 @@ const yaml = require('js-yaml');
 
 const BUCKET_NAME = 'lambci-buildresults-ga8wy7gvebrx'; // TODO: Don't hard-code this!
 const CODE_KEY_NAME = 'packaged.zip';
-const TEMPLATE_NAME = 'template.yml';
+const MAIN_TEMPLATE_NAME = 'template.yml';
+const TEST_TEMPLATE_NAME = 'testtemplate.yml';
 
 function prependKeyPrefix(relative_filename) {
   return [ // TODO: Don't hard code this?
@@ -23,10 +24,14 @@ function prependKeyPrefix(relative_filename) {
   ].join('/');
 }
 
-function updateArtifactPaths(content, path, file) {
+function constructS3URL(keyName) {
+  return ['https://s3.amazonaws.com', BUCKET_NAME, keyName].join('/');
+}
+
+function updateMainTemplateArtifactPaths(content, path, file) {
   const template = yaml.safeLoad(content);
 
-  const functionResources = Object.keys(template.Resources).filter((key) => {
+  const functionResources = Object.keys(template.Resources).filter((key) => { // TODO: Is there a type for functionResources?
     return template.Resources[key].Type === "AWS::Serverless::Function";
   }).map((key) => {
     return template.Resources[key];
@@ -47,6 +52,20 @@ function updateArtifactPaths(content, path, file) {
   return yaml.safeDump(template);
 }
 
+function updateTestTemplateArtifactPaths(content, path, file) {
+  const template = yaml.safeLoad(content);
+
+  Object.keys(template.Resources).filter((key) => {
+    return template.Resources[key].Type === "AWS::CloudFormation::Stack";
+  }).map((key) => {
+    const stackResource = template.Resources[key];
+
+    stackResource.Properties.TemplateURL = constructS3URL(prependKeyPrefix(MAIN_TEMPLATE_NAME));
+  });
+
+  return yaml.safeDump(template);
+}
+
 gulp.task('package', () =>
   {
     gulp.src('packaged/**/*')
@@ -55,20 +74,23 @@ gulp.task('package', () =>
         Bucket: BUCKET_NAME,
         keyTransform: prependKeyPrefix
       }));
-    gulp.src(TEMPLATE_NAME)
-      .pipe(modifyFile(updateArtifactPaths))
+    gulp.src(MAIN_TEMPLATE_NAME)
+      .pipe(modifyFile(updateMainTemplateArtifactPaths))
       .pipe(s3({
         Bucket: BUCKET_NAME,
         keyTransform: prependKeyPrefix
       }))
       .on('end', () => {
-        console.log(
-          [
-            'https://s3.amazonaws.com',
-            BUCKET_NAME,
-            prependKeyPrefix(TEMPLATE_NAME)
-          ].join('/')
-        );
-      })
+        console.log(constructS3URL(prependKeyPrefix(MAIN_TEMPLATE_NAME)));
+      });
+    gulp.src(TEST_TEMPLATE_NAME)
+      .pipe(modifyFile(updateTestTemplateArtifactPaths))
+      .pipe(s3({
+        Bucket: BUCKET_NAME,
+        keyTransform: prependKeyPrefix
+      }))
+      .on('end', () => {
+        console.log(constructS3URL(prependKeyPrefix(TEST_TEMPLATE_NAME)));
+      });
   }
 );
