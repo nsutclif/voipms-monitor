@@ -51,15 +51,19 @@ function requestCurrentRegistrationStatus(
 }
 
 function getRegistrationForComparison(status: RegistrationStatus): FocusedRegistrationStatus {
+    let registrations: FocusedRegistration[];
+    if (Array.isArray(status.registrations)) {
+        registrations = status.registrations.map((registration: Registration): FocusedRegistration => {
+            return {
+                server_shortname: registration.server_shortname,
+                register_ip: registration.register_ip,
+            };
+        });
+    }
     if (status) {
         return {
             registered: status.registered,
-            registrations: status.registrations.map((registration: Registration): FocusedRegistration => {
-                return {
-                    server_shortname: registration.server_shortname,
-                    register_ip: registration.register_ip,
-                };
-            }),
+            registrations,
         };
     } else {
         return;

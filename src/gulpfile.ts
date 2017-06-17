@@ -11,7 +11,7 @@ import * as yaml from "js-yaml";
 import * as VinylFile from "vinyl";
 
 const BUCKET_NAME = "lambci-buildresults-ga8wy7gvebrx"; // TODO: Don't hard-code this!
-const CODE_KEY_NAME = "packaged.zip";
+const CODE_KEY_NAME = "PollVoipMSFunction.zip";
 const MAIN_TEMPLATE_NAME = "template.yml";
 const TEST_TEMPLATE_NAME = "testtemplate.yml";
 
@@ -34,7 +34,7 @@ function updateMainTemplateArtifactPaths(content: string, path: string, file: Vi
 
   // TODO: Is there a type for functionResources?
   const functionResources = Object.keys(template.Resources).filter((key) => {
-    return template.Resources[key].Type === "AWS::Serverless::Function";
+    return template.Resources[key].Type === "AWS::Lambda::Function";
   }).map((key) => {
     return template.Resources[key];
   });
@@ -47,8 +47,8 @@ function updateMainTemplateArtifactPaths(content: string, path: string, file: Vi
     throw new Error("Build processes assumes only one function resource.");
   }
 
-  functionResources[0].Properties.CodeUri =
-    "s3://" + BUCKET_NAME + "/" + prependKeyPrefix(CODE_KEY_NAME);
+  functionResources[0].Properties.Code.S3Bucket = BUCKET_NAME;
+  functionResources[0].Properties.Code.S3Key = prependKeyPrefix(CODE_KEY_NAME);
 
   // We could convert this to JSON, but it's probably easier for debugging to just leave it as YAML
   return yaml.safeDump(template);

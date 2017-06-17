@@ -1,5 +1,4 @@
 AWSTemplateFormatVersion : '2010-09-09'
-Transform: AWS::Serverless-2016-10-31
 Description: A serverless application for monitoring Voip.ms registration status
 Parameters:
   VoipMSUser:
@@ -8,6 +7,7 @@ Parameters:
   VoipMSPassword:
     Type: String
     Default: ""
+    NoEcho: true
   VoipMSAccount:
     Type: String
     Default: ""
@@ -21,12 +21,46 @@ Conditions:
   CreateSubscription:
     Fn::Not: [Fn::Equals: [Ref: NotificationEmail, '']]
 Resources:
-  PollVoipMSFunction:
-    Type: AWS::Serverless::Function
+  PollFunctionLambdaExecutionRole:
+    Type: AWS::IAM::Role
     Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/AWSLambdaExecute
+      Policies:
+        - PolicyName: AccountRegistrationTableAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              # Allow the Lambda function to use the table:
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                Resource:
+                  Fn::Sub: arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${AccountRegistrationStatus}
+              # Allow the Lambda function to pubish to the SNS topic:
+              - Effect: Allow
+                Action:
+                  - sns:Publish
+                Resource:
+                  Ref: RegistrationStatusChangeTopic
+  PollVoipMSFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket: fillinlater
+        S3Key: fillinlater
       Handler: built/index.handler
       Runtime: nodejs6.10
-      CodeUri: ./
       Environment:
         Variables:
           USER:
@@ -40,35 +74,36 @@ Resources:
             Ref: AccountRegistrationStatus
           REGISTRATION_STATUS_CHANGE_TOPIC:
             Ref: RegistrationStatusChangeTopic
-      Policies:
-        - AWSLambdaExecute # Managed Policy
-        - Version: "2012-10-17"
-          Statement:
-            # Allow the Lambda function to use the table:
-            - Effect: Allow
-              Action:
-                - dynamodb:GetItem
-                - dynamodb:PutItem
-              Resource:
-                Fn::Sub: arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${AccountRegistrationStatus}
-            # Allow the Lambda function to pubish to the SNS topic:
-            - Effect: Allow
-              Action:
-                - sns:Publish
-              Resource:
-                Ref: RegistrationStatusChangeTopic
-      Events:
-        PollEvent:
-          Properties:
-            Schedule:
-              Fn::Sub: rate(${IntervalMinutes} minutes)
-          Type: Schedule
-  AccountRegistrationStatus:
-    Type: AWS::Serverless::SimpleTable
+      Role:
+        Fn::GetAtt: [PollFunctionLambdaExecutionRole, Arn]
+  PollEvent:
+    Type: AWS::Events::Rule
     Properties:
-      PrimaryKey:
-        Name: account
-        Type: String
+      ScheduleExpression:
+        Fn::Sub: rate(${IntervalMinutes} minutes)
+      Targets:
+      - Id: PollLambdaTarget
+        Arn:
+          Fn::GetAtt: [PollVoipMSFunction, Arn]
+  # Allow Cloudwatch Event to trigger Lambda:
+  PollEventPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName:
+        Fn::GetAtt: [PollVoipMSFunction, Arn]
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn:
+        Fn::GetAtt: [PollEvent, Arn]
+  AccountRegistrationStatus:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+      - AttributeName: account
+        AttributeType: "S"
+      KeySchema:
+      - AttributeName: account
+        KeyType: HASH
       ProvisionedThroughput:
         ReadCapacityUnits: 1
         WriteCapacityUnits: 1
