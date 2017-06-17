@@ -17,6 +17,9 @@ Parameters:
     Type: Number
     Default: 5
     MinValue: 2 # 1 doesn't work with Schedule expression as is
+Conditions:
+  CreateSubscription:
+    Fn::Not: [Fn::Equals: [Ref: NotificationEmail, '']]
 Resources:
   PollVoipMSFunction:
     Type: AWS::Serverless::Function
@@ -73,6 +76,7 @@ Resources:
     Type: AWS::SNS::Topic
   NotificationSubscription:
     Type: AWS::SNS::Subscription
+    Condition: CreateSubscription
     Properties:
       Protocol: email
       Endpoint:

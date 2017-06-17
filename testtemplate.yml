@@ -1,0 +1,17 @@
+AWSTemplateFormatVersion : '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: An experimental test harness for voipms-monitor
+Resources:
+  # Nested stacks cannot contain Transforms!  Can't use Serverless Application Model for nested stacks :-(
+  BadPasswordStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        IntervalMinutes: 2
+        NotificationEmail: ''
+        VoipMSAccount: 'test'
+        VoipMSPassword: 'test'
+        VoipMSUser: 'test'
+      Tags:
+        - Key: Test
+          Value: "Bad Password"
