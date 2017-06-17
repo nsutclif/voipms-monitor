@@ -8,6 +8,7 @@ import * as modifyFile from "gulp-modify-file";
 import * as s3 from "gulp-s3-upload";
 import * as zip from "gulp-zip";
 import * as yaml from "js-yaml";
+import * as VinylFile from "vinyl";
 
 const BUCKET_NAME = "lambci-buildresults-ga8wy7gvebrx"; // TODO: Don't hard-code this!
 const CODE_KEY_NAME = "packaged.zip";
@@ -28,7 +29,7 @@ function constructS3URL(keyName: string): string {
   return ["https://s3.amazonaws.com", BUCKET_NAME, keyName].join("/");
 }
 
-function updateMainTemplateArtifactPaths(content, path, file) {
+function updateMainTemplateArtifactPaths(content: string, path: string, file: VinylFile): string {
   const template: any = yaml.safeLoad(content); // Unfortunately I don't see any types for CF Templates in the AWS SDK
 
   // TODO: Is there a type for functionResources?
@@ -53,7 +54,7 @@ function updateMainTemplateArtifactPaths(content, path, file) {
   return yaml.safeDump(template);
 }
 
-function updateTestTemplateArtifactPaths(content, path, file) {
+function updateTestTemplateArtifactPaths(content: string, path: string, file: VinylFile): string {
   const template: any = yaml.safeLoad(content);
 
   Object.keys(template.Resources).filter((key) => {
