@@ -27,10 +27,11 @@
   },
   "devDependencies": {
     "@types/aws-lambda": "0.0.13",
+    "@types/js-yaml": "3.5.31",
     "@types/gulp": "^4.0.4",
     "@types/node": "7.0.29",
     "@types/request-promise-native": "1.0.5",
-    "@types/js-yaml": "3.5.31",
+    "@types/vinyl": "2.0.0",
     "aws-sdk": "2.72.0",
     "gulp": "3.9.1",
     "gulp-modify-file": "0.1.0",
@@ -38,6 +39,7 @@
     "gulp-zip": "4.0.0",
     "js-yaml": "3.8.4",
     "tslint": "5.4.3",
-    "typescript": "2.3.4"
+    "typescript": "2.3.4",
+    "vinyl": "2.0.2"
   }
 }
