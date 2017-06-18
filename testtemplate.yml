@@ -1,5 +1,4 @@
-AWSTemplateFormatVersion : '2010-09-09'
-Transform: AWS::Serverless-2016-10-31
+AWSTemplateFormatVersion : "2010-09-09"
 Description: An experimental test harness for voipms-monitor
 Resources:
   # Nested stacks cannot contain Transforms!  Can't use Serverless Application Model for nested stacks :-(
@@ -8,10 +7,40 @@ Resources:
     Properties:
       Parameters:
         IntervalMinutes: 2
-        NotificationEmail: ''
-        VoipMSAccount: 'test'
-        VoipMSPassword: 'test'
-        VoipMSUser: 'test'
+        NotificationEmail: ""
+        VoipMSAccount: "test"
+        VoipMSPassword: "test"
+        VoipMSUser: "test"
       Tags:
         - Key: Test
           Value: "Bad Password"
+  # Capture the SNS messages in this SQS queue:
+  BadPasswordResultsQueue:
+    Type: AWS::SQS::Queue
+  BadPasswordResultsSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Endpoint:
+        Fn::GetAtt: [BadPasswordResultsQueue,Arn]
+      Protocol: sqs
+      TopicArn:
+        Fn::GetAtt: [BadPasswordStack, Outputs.RegistrationStatusChangeTopicArn]
+  # Allow the SNS topic to post to the SQS queue:
+  BadPasswordResultsSubscriptionPolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        - Sid: "BadPasswordResultsSendMessage"
+          Effect: Allow
+          Principal: "*"
+          Action: "sqs:SendMessage"
+          Resource:
+            Fn::GetAtt: [BadPasswordResultsQueue, Arn]
+          Condition:
+            ArnEquals:
+              aws:SourceArn:
+                Fn::GetAtt: [BadPasswordStack, Outputs.RegistrationStatusChangeTopicArn]
+      Queues:
+      - Ref: BadPasswordResultsQueue

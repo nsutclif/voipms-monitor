@@ -118,3 +118,7 @@ Resources:
         Ref: NotificationEmail
       TopicArn:
         Ref: RegistrationStatusChangeTopic
+Outputs:
+  RegistrationStatusChangeTopicArn:
+    Value:
+      Ref: RegistrationStatusChangeTopic
