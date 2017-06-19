@@ -13,6 +13,7 @@ import * as VinylFile from "vinyl";
 const BUCKET_NAME = "lambci-buildresults-ga8wy7gvebrx"; // TODO: Don't hard-code this!
 const CODE_KEY_NAME = "PollVoipMSFunction.zip";
 const MAIN_TEMPLATE_NAME = "template.yml";
+const SQS_REDIRECT_TEMPLATE_NAME = "sqsredirectedtemplate.yml";
 const TEST_TEMPLATE_NAME = "testtemplate.yml";
 
 function prependKeyPrefix(relativeFilename: string): string {
@@ -62,7 +63,9 @@ function updateTestTemplateArtifactPaths(content: string, path: string, file: Vi
   }).map((key) => {
     const stackResource = template.Resources[key];
 
-    stackResource.Properties.TemplateURL = constructS3URL(prependKeyPrefix(MAIN_TEMPLATE_NAME));
+    // Assume stackResource.Properties.TemplateURL already has the name of the template.
+    // We will prepend the rest of the URL.
+    stackResource.Properties.TemplateURL = constructS3URL(prependKeyPrefix(stackResource.Properties.TemplateURL));
   });
 
   return yaml.safeDump(template);
@@ -92,5 +95,15 @@ gulp.task("package", () => {
     }))
     .on("end", () => {
       console.log(constructS3URL(prependKeyPrefix(TEST_TEMPLATE_NAME)));
-    }); },
+    });
+  gulp.src("../" + SQS_REDIRECT_TEMPLATE_NAME)
+    .pipe(modifyFile(updateTestTemplateArtifactPaths))
+    .pipe(s3()({
+      Bucket: BUCKET_NAME,
+      keyTransform: prependKeyPrefix,
+    }))
+    .on("end", () => {
+      console.log(constructS3URL(prependKeyPrefix(SQS_REDIRECT_TEMPLATE_NAME)));
+    });
+  },
 );
