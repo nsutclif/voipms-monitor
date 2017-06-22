@@ -9,7 +9,7 @@ exports.handler = (event: any, context: Context, callback: Callback) => {
         process.env.AWS_DEFAULT_REGION,
         process.env.ACCOUNT_REGISTRATION_STATUS_TABLE_NAME,
         process.env.REGISTRATION_STATUS_CHANGE_TOPIC,
-   ).then( () => {
+    ).then( () => {
         callback();
     }).catch( (error) => {
         callback(error);

@@ -30,32 +30,7 @@ function constructS3URL(keyName: string): string {
   return ["https://s3.amazonaws.com", BUCKET_NAME, keyName].join("/");
 }
 
-function updateMainTemplateArtifactPaths(content: string, path: string, file: VinylFile): string {
-  const template: any = yaml.safeLoad(content); // Unfortunately I don't see any types for CF Templates in the AWS SDK
-
-  // TODO: Is there a type for functionResources?
-  const functionResources = Object.keys(template.Resources).filter((key) => {
-    return template.Resources[key].Type === "AWS::Lambda::Function";
-  }).map((key) => {
-    return template.Resources[key];
-  });
-
-  if (!functionResources.length) {
-    throw new Error("No function resources found!");
-  }
-
-  if (functionResources.length > 1) {
-    throw new Error("Build processes assumes only one function resource.");
-  }
-
-  functionResources[0].Properties.Code.S3Bucket = BUCKET_NAME;
-  functionResources[0].Properties.Code.S3Key = prependKeyPrefix(CODE_KEY_NAME);
-
-  // We could convert this to JSON, but it's probably easier for debugging to just leave it as YAML
-  return yaml.safeDump(template);
-}
-
-function updateTestTemplateArtifactPaths(content: string, path: string, file: VinylFile): string {
+function updateTemplateArtifactPaths(content: string, path: string, file: VinylFile): string {
   const template: any = yaml.safeLoad(content);
 
   Object.keys(template.Resources).filter((key) => {
@@ -66,6 +41,16 @@ function updateTestTemplateArtifactPaths(content: string, path: string, file: Vi
     // Assume stackResource.Properties.TemplateURL already has the name of the template.
     // We will prepend the rest of the URL.
     stackResource.Properties.TemplateURL = constructS3URL(prependKeyPrefix(stackResource.Properties.TemplateURL));
+  });
+
+  Object.keys(template.Resources).filter((key) => {
+    return template.Resources[key].Type === "AWS::Lambda::Function";
+  }).map((key) => {
+    // TODO: Is there a type for functionResource?
+    const functionResource = template.Resources[key];
+
+    functionResource.Properties.Code.S3Bucket = BUCKET_NAME;
+    functionResource.Properties.Code.S3Key = prependKeyPrefix(CODE_KEY_NAME);
   });
 
   return yaml.safeDump(template);
@@ -79,7 +64,7 @@ gulp.task("package", () => {
       keyTransform: prependKeyPrefix,
     }));
   gulp.src("../" + MAIN_TEMPLATE_NAME)
-    .pipe(modifyFile(updateMainTemplateArtifactPaths))
+    .pipe(modifyFile(updateTemplateArtifactPaths))
     .pipe(s3()({
       Bucket: BUCKET_NAME,
       keyTransform: prependKeyPrefix,
@@ -88,7 +73,7 @@ gulp.task("package", () => {
       console.log(constructS3URL(prependKeyPrefix(MAIN_TEMPLATE_NAME)));
     });
   gulp.src("../" + TEST_TEMPLATE_NAME)
-    .pipe(modifyFile(updateTestTemplateArtifactPaths))
+    .pipe(modifyFile(updateTemplateArtifactPaths))
     .pipe(s3()({
       Bucket: BUCKET_NAME,
       keyTransform: prependKeyPrefix,
@@ -97,7 +82,7 @@ gulp.task("package", () => {
       console.log(constructS3URL(prependKeyPrefix(TEST_TEMPLATE_NAME)));
     });
   gulp.src("../" + SQS_REDIRECT_TEMPLATE_NAME)
-    .pipe(modifyFile(updateTestTemplateArtifactPaths))
+    .pipe(modifyFile(updateTemplateArtifactPaths))
     .pipe(s3()({
       Bucket: BUCKET_NAME,
       keyTransform: prependKeyPrefix,
