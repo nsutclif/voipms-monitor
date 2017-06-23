@@ -58,7 +58,7 @@ Resources:
     Properties:
       Code:
         S3Bucket: fillinlater
-        S3Key: fillinlater
+        S3Key: githubStatusLambda.zip
       Handler: built/index.handler
       Runtime: nodejs6.10
       Environment:

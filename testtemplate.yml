@@ -1,6 +1,55 @@
 AWSTemplateFormatVersion : "2010-09-09"
 Description: An experimental test harness for voipms-monitor
+
+Parameters:
+  Repo:
+    Type: String
+  GitHubToken:
+    Type: String
+    NoEcho: true
+  CommitHash:
+    Type: String
+
 Resources:
+  PendingStatus:
+    Type: Custom::GitHubStatus
+    Properties:
+      ServiceToken:
+        Fn::GetAtt: [GitHubStatusBeginFunction, Arn]
+      Repo:
+        Ref: Repo
+      Context: "continuous-integration/lambci/deploy"
+      GitHubToken:
+        Ref: GitHubToken
+      CommitHash:
+        Ref: CommitHash
+      State: pending
+      
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Path: "/"
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/AWSLambdaExecute
+  GitHubStatusBeginFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket: fillinlater
+        S3Key: githubStatusLambda.ts
+      Handler: built/githubStatusLambda.handler
+      Runtime: nodejs6.10
+      Role:
+        Fn::GetAtt: [LambdaExecutionRole, Arn]
   # Nested stacks cannot contain Transforms!  Can't use Serverless Application Model for nested stacks :-(
   BadPasswordStack:
     Type: AWS::CloudFormation::Stack
@@ -15,3 +64,17 @@ Resources:
         - Key: Test
           Value: "Bad Password"
       TemplateURL: sqsredirectedtemplate.yml
+  CompleteStatus:
+    Type: Custom::GitHubStatus
+    Properties:
+      ServiceToken:
+        Fn::GetAtt: [GitHubStatusBeginFunction, Arn]
+      Repo:
+        Ref: Repo
+      Context: "continuous-integration/lambci/deploy"
+      GitHubToken:
+        Ref: GitHubToken
+      CommitHash:
+        Ref: CommitHash
+      State: success
+    DependsOn: BadPasswordStack
