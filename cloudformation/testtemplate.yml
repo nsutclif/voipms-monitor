@@ -11,11 +11,23 @@ Parameters:
     Type: String
 
 Resources:
+  # Nested stacks cannot contain Transforms!  Can't use Serverless Application Model for nested stacks :-(
+  GitHubStatusCustomResourceStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        Repo:
+          Ref: Repo
+        GitHubToken:
+          Ref: GitHubToken
+        CommitHash:
+          Ref: CommitHash
+      TemplateURL: githubstatustemplate.yml
   PendingStatus:
     Type: Custom::GitHubStatus
     Properties:
       ServiceToken:
-        Fn::GetAtt: [GitHubStatusBeginFunction, Arn]
+        Fn::GetAtt: [GitHubStatusCustomResourceStack, Outputs.GitHubStatusFunctionArn]
       Repo:
         Ref: Repo
       Context: "continuous-integration/lambci/deploy"
@@ -24,32 +36,6 @@ Resources:
       CommitHash:
         Ref: CommitHash
       State: pending
-      
-  LambdaExecutionRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-        - Effect: Allow
-          Principal:
-            Service:
-            - lambda.amazonaws.com
-          Action:
-          - sts:AssumeRole
-      Path: "/"
-      ManagedPolicyArns:
-      - arn:aws:iam::aws:policy/AWSLambdaExecute
-  GitHubStatusBeginFunction:
-    Type: AWS::Lambda::Function
-    Properties:
-      Code:
-        S3Bucket: fillinlater
-        S3Key: githubStatusLambda.ts
-      Handler: built/githubStatusLambda.handler
-      Runtime: nodejs6.10
-      Role:
-        Fn::GetAtt: [LambdaExecutionRole, Arn]
   # Nested stacks cannot contain Transforms!  Can't use Serverless Application Model for nested stacks :-(
   BadPasswordStack:
     Type: AWS::CloudFormation::Stack
@@ -68,7 +54,7 @@ Resources:
     Type: Custom::GitHubStatus
     Properties:
       ServiceToken:
-        Fn::GetAtt: [GitHubStatusBeginFunction, Arn]
+        Fn::GetAtt: [GitHubStatusCustomResourceStack, Outputs.GitHubStatusFunctionArn]
       Repo:
         Ref: Repo
       Context: "continuous-integration/lambci/deploy"

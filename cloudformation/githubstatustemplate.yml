@@ -1,0 +1,42 @@
+AWSTemplateFormatVersion : "2010-09-09"
+Description: A CloudFormation custom resource for a GitHub status
+
+Parameters:
+  Repo:
+    Type: String
+  GitHubToken:
+    Type: String
+    NoEcho: true
+  CommitHash:
+    Type: String
+
+Resources:
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Path: "/"
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/AWSLambdaExecute
+  GitHubStatusFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket: fillinlater
+        S3Key: githubStatusLambda.ts
+      Handler: built/githubStatusLambda.handler
+      Runtime: nodejs6.10
+      Role:
+        Fn::GetAtt: [LambdaExecutionRole, Arn]
+Outputs:
+  GitHubStatusFunctionArn:
+    Value:
+      Fn::GetAtt: [GitHubStatusFunction, Arn]

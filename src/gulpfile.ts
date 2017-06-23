@@ -57,38 +57,24 @@ function updateTemplateArtifactPaths(content: string, path: string, file: VinylF
 }
 
 gulp.task("package", () => {
+    function logCompletedFile(keyname: string): void {
+        console.log(constructS3URL(keyname));
+    }
+
     gulp.src("../packaged/**/*")
         .pipe(zip(CODE_KEY_NAME))
         .pipe(s3()({
             Bucket: BUCKET_NAME,
             keyTransform: prependKeyPrefix,
         }));
-    gulp.src("../" + MAIN_TEMPLATE_NAME)
+    gulp.src("../cloudformation/*.yml")
         .pipe(modifyFile(updateTemplateArtifactPaths))
         .pipe(s3()({
             Bucket: BUCKET_NAME,
             keyTransform: prependKeyPrefix,
-        }))
-        .on("end", () => {
-            console.log(constructS3URL(prependKeyPrefix(MAIN_TEMPLATE_NAME)));
-        });
-    gulp.src("../" + TEST_TEMPLATE_NAME)
-      .pipe(modifyFile(updateTemplateArtifactPaths))
-      .pipe(s3()({
-          Bucket: BUCKET_NAME,
-          keyTransform: prependKeyPrefix,
-      }))
-      .on("end", () => {
-          console.log(constructS3URL(prependKeyPrefix(TEST_TEMPLATE_NAME)));
-      });
-    gulp.src("../" + SQS_REDIRECT_TEMPLATE_NAME)
-      .pipe(modifyFile(updateTemplateArtifactPaths))
-      .pipe(s3()({
-          Bucket: BUCKET_NAME,
-          keyTransform: prependKeyPrefix,
-      }))
-      .on("end", () => {
-          console.log(constructS3URL(prependKeyPrefix(SQS_REDIRECT_TEMPLATE_NAME)));
-      });
+            onChange: logCompletedFile,
+            onNoChange: logCompletedFile,
+            onNew: logCompletedFile,
+        }));
     },
 );
