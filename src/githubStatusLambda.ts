@@ -8,6 +8,7 @@ interface CustomResourceEvent {
     RequestId: string;
     ResourceType: string;
     LogicalResourceId: string;
+    PhysicalResourceId?: string;
     ResourceProperties: {[key: string]: string};
     OldResourceProperties?: {[key: string]: string};
 }
@@ -196,7 +197,7 @@ exports.handler = (event: CustomResourceEvent, context: Context, callback: Callb
             statusParams.state = actualStateToSend;
             return updateStatus(statusParams);
         } else {
-            return Promise.resolve("");
+            return Promise.resolve(event.PhysicalResourceId);
         }
     }).then((statusURL: string) => {
         return sendResponse(event, "SUCCESS", statusURL);
