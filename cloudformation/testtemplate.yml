@@ -30,11 +30,15 @@ Resources:
         Fn::GetAtt: [GitHubStatusCustomResourceStack, Outputs.GitHubStatusFunctionArn]
       Repo:
         Ref: Repo
-      Context: "continuous-integration/lambci/deploy"
+      Context: "continuous-integration/functional"
       GitHubToken:
         Ref: GitHubToken
       CommitHash:
         Ref: CommitHash
+      Target_URL:
+        Fn::Sub:
+          https://console.aws.amazon.com/cloudformation/home?region=${AWS::Region}#/stack/detail?stackId=${AWS::StackId}
+      Description: "Functional tests starting..."
       State: pending
   # Nested stacks cannot contain Transforms!  Can't use Serverless Application Model for nested stacks :-(
   BadPasswordStack:
@@ -57,10 +61,14 @@ Resources:
         Fn::GetAtt: [GitHubStatusCustomResourceStack, Outputs.GitHubStatusFunctionArn]
       Repo:
         Ref: Repo
-      Context: "continuous-integration/lambci/deploy"
+      Context: "continuous-integration/functional"
       GitHubToken:
         Ref: GitHubToken
       CommitHash:
         Ref: CommitHash
+      Target_URL:
+        Fn::Sub:
+          https://console.aws.amazon.com/cloudformation/home?region=${AWS::Region}#/stack/detail?stackId=${AWS::StackId}
+      Description: "Functional tests passed!"
       State: success
     DependsOn: BadPasswordStack

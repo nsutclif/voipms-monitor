@@ -7,17 +7,9 @@ import {
 } from "aws-lambda";
 import * as rpn from "request-promise-native";
 
-interface StatusParams {
-    repo: string;
-    context: string;
-    gitHubToken: string;
-    commitHash: string;
-    state: string;
-}
-
 function gitHubErrorToString(error): string {
     let errorString: string = "Error contacting GitHub";
-    // error seems to be a JSON but doens't always seem to have the same structure.
+    // Error seem to be a JSON but don't always seem to have the same structure.
     if (error.error) {
         if (error.error.message) {
             errorString = error.error.message;
@@ -26,6 +18,16 @@ function gitHubErrorToString(error): string {
         }
     }
     return errorString;
+}
+
+export interface StatusParams {
+    repo: string;
+    gitHubToken: string;
+    commitHash: string;
+    state: string;
+    target_url: string;
+    description: string;
+    context: string;
 }
 
 export function updateGitHubStatus(params: StatusParams): Promise<string> {
@@ -46,7 +48,8 @@ export function updateGitHubStatus(params: StatusParams): Promise<string> {
         },
         body: {
             state: params.state,
-            description: "test",
+            target_url: params.target_url,
+            description: params.description,
             context: params.context,
         },
         json: true,
@@ -177,12 +180,14 @@ exports.handler = (event: CloudFormationCustomResourceEvent, context: Context, c
     console.log("Begin Handler");
     console.log(JSON.stringify(event));
 
-    const statusParams = {
+    const statusParams: StatusParams = {
         repo: event.ResourceProperties.Repo,
-        context: event.ResourceProperties.Context,
         gitHubToken: event.ResourceProperties.GitHubToken,
         commitHash: event.ResourceProperties.CommitHash,
         state: event.ResourceProperties.State,
+        target_url: event.ResourceProperties.Target_URL,
+        description: event.ResourceProperties.Description,
+        context: event.ResourceProperties.Context,
     };
 
     getActualStateToSend(event, statusParams).then((actualStateToSend: string) => {
