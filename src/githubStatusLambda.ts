@@ -1,27 +1,11 @@
-import {Callback, Context} from "aws-lambda";
+import {
+    Callback,
+    CloudFormationCustomResourceEvent,
+    CloudFormationCustomResourceResponse,
+    CloudFormationCustomResourceUpdateEvent,
+    Context,
+} from "aws-lambda";
 import * as rpn from "request-promise-native";
-
-interface CustomResourceEvent {
-    RequestType: "Create" | "Update" | "Delete";
-    ResponseURL: string;
-    StackId: string;
-    RequestId: string;
-    ResourceType: string;
-    LogicalResourceId: string;
-    PhysicalResourceId?: string;
-    ResourceProperties: {[key: string]: string};
-    OldResourceProperties?: {[key: string]: string};
-}
-
-interface CustomResourceResponse {
-    Status: "SUCCESS" | "FAILED";
-    Reason?: string;
-    PhysicalResourceId: string;
-    StackId: string;
-    RequestId: string;
-    LogicalResourceId: string;
-    Data?: {[key: string]: string};
-}
 
 interface StatusParams {
     repo: string;
@@ -44,7 +28,7 @@ function gitHubErrorToString(error): string {
     return errorString;
 }
 
-export function updateStatus(params: StatusParams): Promise<string> {
+export function updateGitHubStatus(params: StatusParams): Promise<string> {
     const requestOptions: rpn.OptionsWithUri = {
         method: "POST",
         uri:
@@ -68,10 +52,10 @@ export function updateStatus(params: StatusParams): Promise<string> {
         json: true,
     };
 
-    console.log("updateStatus request: " + JSON.stringify(requestOptions));
+    console.log("updateGitHubStatus request: " + JSON.stringify(requestOptions));
 
     return rpn(requestOptions).then((result) => {
-        console.log("updateStatus result: " + JSON.stringify(result));
+        console.log("updateGitHubStatus result: " + JSON.stringify(result));
         return result.url;
     }).catch((error) => {
         console.log("Error from GitHub POST: " + JSON.stringify(error));
@@ -80,7 +64,7 @@ export function updateStatus(params: StatusParams): Promise<string> {
     });
 }
 
-export function getCurrentStatus(params: StatusParams): Promise<string> {
+export function getCurrentGitHubStatus(params: StatusParams): Promise<string> {
     const requestOptions: rpn.OptionsWithUri = {
         method: "GET",
         uri:
@@ -119,21 +103,30 @@ export function getCurrentStatus(params: StatusParams): Promise<string> {
     });
 }
 
-function sendResponse(
-    event: CustomResourceEvent,
+function sendCloudFrontResponse(
+    event: CloudFormationCustomResourceEvent,
     status: "SUCCESS" | "FAILED",
     gitHubStatusURL: string,
     error?: string,
 ): Promise<void> {
-    const responseBody: CustomResourceResponse = {
-        Status: status,
-        PhysicalResourceId: gitHubStatusURL, // TODO: Return GitHub URL?
-        StackId: event.StackId,
-        RequestId: event.RequestId,
-        LogicalResourceId: event.LogicalResourceId,
-    };
-    if (error) {
-        responseBody.Reason = error;
+    let responseBody: CloudFormationCustomResourceResponse;
+    if (status === "SUCCESS") {
+        responseBody = {
+            Status: status,
+            PhysicalResourceId: gitHubStatusURL,
+            StackId: event.StackId,
+            RequestId: event.RequestId,
+            LogicalResourceId: event.LogicalResourceId,
+        };
+    } else {
+        responseBody = {
+            Status: "FAILED",
+            PhysicalResourceId: gitHubStatusURL,
+            StackId: event.StackId,
+            RequestId: event.RequestId,
+            LogicalResourceId: event.LogicalResourceId,
+            Reason: error,
+        };
     }
     const responseBodyStr: string = JSON.stringify(responseBody);
 
@@ -148,15 +141,15 @@ function sendResponse(
         },
     };
 
-    console.log("sendResponse request: " + JSON.stringify(requestOptions));
+    console.log("sendCloudFrontResponse request: " + JSON.stringify(requestOptions));
 
     return rpn(requestOptions).then((result) => {
-        console.log("sendResponse result: " + JSON.stringify(result));
+        console.log("sendCloudFrontResponse result: " + JSON.stringify(result));
         return;
     });
 }
 
-function getActualStateToSend(event: CustomResourceEvent, statusParams: StatusParams): Promise<string> {
+function getActualStateToSend(event: CloudFormationCustomResourceEvent, statusParams: StatusParams): Promise<string> {
     const requestState = event.ResourceProperties.State;
 
     // If we're deleting a "pending" State that hasn't yet been set to "success" in Github,
@@ -170,7 +163,7 @@ function getActualStateToSend(event: CustomResourceEvent, statusParams: StatusPa
         // assume it hasn't been changed to pending.  Therefore we don't need to send anything to GitHub.
         return Promise.resolve("");
     }
-    return getCurrentStatus(statusParams).then((currentState: string) => {
+    return getCurrentGitHubStatus(statusParams).then((currentState: string) => {
         if (currentState === "pending") {
             return Promise.resolve("error");
         } else {
@@ -180,7 +173,7 @@ function getActualStateToSend(event: CustomResourceEvent, statusParams: StatusPa
     });
 }
 
-exports.handler = (event: CustomResourceEvent, context: Context, callback: Callback) => {
+exports.handler = (event: CloudFormationCustomResourceEvent, context: Context, callback: Callback) => {
     console.log("Begin Handler");
     console.log(JSON.stringify(event));
 
@@ -195,17 +188,21 @@ exports.handler = (event: CustomResourceEvent, context: Context, callback: Callb
     getActualStateToSend(event, statusParams).then((actualStateToSend: string) => {
         if (actualStateToSend) {
             statusParams.state = actualStateToSend;
-            return updateStatus(statusParams);
+            return updateGitHubStatus(statusParams);
         } else {
-            return Promise.resolve(event.PhysicalResourceId);
+            const PhysicalResourceId = (event as CloudFormationCustomResourceUpdateEvent).PhysicalResourceId;
+            if (!PhysicalResourceId) {
+                throw new Error("No PhyscalResourceId for resource not being updated.");
+            }
+            return Promise.resolve(PhysicalResourceId);
         }
     }).then((statusURL: string) => {
-        return sendResponse(event, "SUCCESS", statusURL);
+        return sendCloudFrontResponse(event, "SUCCESS", statusURL);
     }).then(() => {
         callback();
         return;
     }).catch( (error) => {
-        return sendResponse(event, "FAILED", "", error).catch().then(() => {
+        return sendCloudFrontResponse(event, "FAILED", "", error).catch().then(() => {
             callback(error);
         });
     });
