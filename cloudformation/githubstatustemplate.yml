@@ -36,6 +36,12 @@ Resources:
       Runtime: nodejs6.10
       Role:
         Fn::GetAtt: [LambdaExecutionRole, Arn]
+  # Create a log group for the Lambda function so that it gets deleted when the stack is deleted.
+  GitHubStatusFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName:
+        Fn::Sub: /aws/lambda/${GitHubStatusFunction}
 Outputs:
   GitHubStatusFunctionArn:
     Value:
