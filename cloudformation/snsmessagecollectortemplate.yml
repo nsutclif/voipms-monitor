@@ -1,0 +1,101 @@
+AWSTemplateFormatVersion : "2010-09-09"
+Description: >
+  A custom resource that intercepts SNS messaages and stores them in an SQS queue.
+  The stack won't finish creating until the specified number of SNS messages arrive.
+
+Parameters:
+  SNSTopicArn:
+    Type: String
+    AllowedPattern: arn:aws:sns:.*
+    ConstraintDescription: Must be an SNS topic ARN
+
+Resources:
+  # Capture the SNS messages in this SQS queue:
+  ResultsQueue:
+    Type: AWS::SQS::Queue
+  ResultsSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Endpoint:
+        Fn::GetAtt: [ResultsQueue,Arn]
+      Protocol: sqs
+      TopicArn:
+        Ref: SNSTopicArn
+  # Allow the SNS topic to post to the SQS queue:
+  ResultsSubscriptionPolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        - Sid: "WrappedResultsSendMessage"
+          Effect: Allow
+          Principal: "*"
+          Action: "sqs:SendMessage"
+          Resource:
+            Fn::GetAtt: [ResultsQueue, Arn]
+          Condition:
+            ArnEquals:
+              aws:SourceArn:
+                Ref: SNSTopicArn
+      Queues:
+      - Ref: ResultsQueue
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/AWSLambdaExecute
+      Policies:
+        - PolicyName: CountTableAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              # Allow the Lambda function to use the table:
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                Resource:
+                  Fn::Sub: arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${CountTable}
+  CollectorFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket: fillinlater
+        S3Key: snsCollectorLambda.ts
+      Environment:
+        Variables:
+          # Tell the Lambda function which table to use:
+          COUNT_TABLE:
+            Ref: CountTable
+      Handler: built/snsCollectorLambda.handler
+      Runtime: nodejs6.10
+      Role:
+        Fn::GetAtt: [LambdaExecutionRole, Arn]
+  CountTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+      - AttributeName: collector
+        AttributeType: "S"
+      KeySchema:
+      - AttributeName: collector
+        KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+  #TODO: also add a timeout
+  SNSMessageCollector:
+    Type: Custom::SNSMessageCollector
+    Properties:
+      ServiceToken:
+        Fn::GetAtt: [CollectorFunction, Arn]

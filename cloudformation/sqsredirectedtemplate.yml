@@ -34,36 +34,6 @@ Resources:
         VoipMSUser:
           Ref: VoipMSUser
       TemplateURL: template.yml
-  # Capture the SNS messages in this SQS queue:
-  ResultsQueue:
-    Type: AWS::SQS::Queue
-  ResultsSubscription:
-    Type: AWS::SNS::Subscription
-    Properties:
-      Endpoint:
-        Fn::GetAtt: [ResultsQueue,Arn]
-      Protocol: sqs
-      TopicArn:
-        Fn::GetAtt: [WrappedStack, Outputs.RegistrationStatusChangeTopicArn]
-  # Allow the SNS topic to post to the SQS queue:
-  ResultsSubscriptionPolicy:
-    Type: AWS::SQS::QueuePolicy
-    Properties:
-      PolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-        - Sid: "WrappedResultsSendMessage"
-          Effect: Allow
-          Principal: "*"
-          Action: "sqs:SendMessage"
-          Resource:
-            Fn::GetAtt: [ResultsQueue, Arn]
-          Condition:
-            ArnEquals:
-              aws:SourceArn:
-                Fn::GetAtt: [WrappedStack, Outputs.RegistrationStatusChangeTopicArn]
-      Queues:
-      - Ref: ResultsQueue
 Outputs:
   ResultsQueueArn:
     Value:
