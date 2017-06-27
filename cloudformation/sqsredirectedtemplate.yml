@@ -17,6 +17,12 @@ Parameters:
     Type: Number
     Default: 5
     MinValue: 2 # 1 doesn't work with Schedule expression as is
+  MessagesToWaitFor:
+    Type: Number
+    MinValue: 0
+  MessagesTimeoutSeconds:
+    Type: Number
+    MinValue: 0
 Resources:
   # Nested stacks cannot contain Transforms!  Can't use Serverless Application Model for nested stacks :-(
   WrappedStack:
@@ -64,7 +70,30 @@ Resources:
                 Fn::GetAtt: [WrappedStack, Outputs.RegistrationStatusChangeTopicArn]
       Queues:
       - Ref: ResultsQueue
+  WaitForMessagesHandle:
+    Type: AWS::CloudFormation::WaitConditionHandle
+  # Subscribe the wait condition handle to the SNS topic:
+  WaitForMessagesSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Endpoint:
+        Ref: WaitForMessagesHandle
+      Protocol: https
+      TopicArn:
+        Fn::GetAtt: [WrappedStack, Outputs.RegistrationStatusChangeTopicArn]
+  WaitForMessages:
+    Type: AWS::CloudFormation::WaitCondition
+    Properties:
+      Count:
+        Ref: MessagesToWaitFor
+      Handle:
+        Ref: WaitForMessagesHandle
+      Timeout:
+        Ref: MessagesTimeoutSeconds
 Outputs:
   ResultsQueueArn:
     Value:
       Fn::GetAtt: [ResultsQueue, Arn]
+  WaitForMessagesUrl:
+    Value:
+      Ref: WaitForMessagesHandle

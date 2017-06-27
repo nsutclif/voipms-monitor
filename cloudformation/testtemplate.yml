@@ -50,6 +50,8 @@ Resources:
         VoipMSAccount: "test"
         VoipMSPassword: "test"
         VoipMSUser: "test"
+        MessagesToWaitFor: 1
+        MessagesTimeoutSeconds: 300 # 5 minutes
       Tags:
         - Key: Test
           Value: "Bad Password"
