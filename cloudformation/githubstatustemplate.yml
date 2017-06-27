@@ -1,15 +1,6 @@
 AWSTemplateFormatVersion : "2010-09-09"
 Description: A CloudFormation custom resource for a GitHub status
 
-Parameters:
-  Repo:
-    Type: String
-  GitHubToken:
-    Type: String
-    NoEcho: true
-  CommitHash:
-    Type: String
-
 Resources:
   LambdaExecutionRole:
     Type: AWS::IAM::Role

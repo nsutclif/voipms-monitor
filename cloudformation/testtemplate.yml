@@ -15,13 +15,6 @@ Resources:
   GitHubStatusCustomResourceStack:
     Type: AWS::CloudFormation::Stack
     Properties:
-      Parameters:
-        Repo:
-          Ref: Repo
-        GitHubToken:
-          Ref: GitHubToken
-        CommitHash:
-          Ref: CommitHash
       TemplateURL: githubstatustemplate.yml
   PendingStatus:
     Type: Custom::GitHubStatus
