@@ -76,7 +76,9 @@ function getPreviousRegistration(
     account: string,
 ): Promise<FocusedRegistrationStatus> {
     return Promise.resolve().then(() => {
-        const requestParams: GetItemInput = {
+        // requestParams hould be a GetItemInput but there's something strange about the typedef of GetItemInput
+        // that TypeScript 2.4.1 complains about
+        const requestParams: any = {
             TableName: tableName,
             Key: { account },
         };
@@ -98,7 +100,9 @@ function saveRegistration(
     registrationStatus: FocusedRegistrationStatus,
 ): Promise<void> {
     return Promise.resolve().then(() => {
-        const requestParams: PutItemInput = {
+        // requestParams hould be a GetItemInput but there's something strange about the typedef of GetItemInput
+        // that TypeScript 2.4.1 complains about
+        const requestParams: any = {
             TableName: tableName,
             Item: {
                 account,
