@@ -77,6 +77,8 @@ Resources:
           # Tell the Lambda function which table to use:
           COUNT_TABLE:
             Ref: CountTable
+          TOPIC_ARN:
+            Ref: SNSTopicArn
       Handler: built/snsCollectorLambda.handler
       Runtime: nodejs6.10
       Role:
@@ -93,9 +95,37 @@ Resources:
       ProvisionedThroughput:
         ReadCapacityUnits: 1
         WriteCapacityUnits: 1
+
+
+        #TODO: Give the lambda function permissions to CountTable.
+
+
+  # Allow the Lambda function to be invoked by the SNS topic:
+  LambdaSNSPolicy:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName:
+        Fn::GetAtt: [CollectorFunction, Arn]
+      Principal: sns.amazonaws.com
+      Action: lambda:InvokeFunction
+      SourceArn:
+        Ref: SNSTopicArn
+  # Subscribe the Lambda function to the SNS topic:
+  LambdaSNSSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Endpoint:
+        Fn::GetAtt: [CollectorFunction, Arn]
+      Protocol: lambda
+      TopicArn:
+        Ref: SNSTopicArn
   #TODO: also add a timeout
   SNSMessageCollector:
     Type: Custom::SNSMessageCollector
     Properties:
       ServiceToken:
         Fn::GetAtt: [CollectorFunction, Arn]
+Outputs:
+  ResultsQueueArn:
+    Value:
+      Ref: ResultsQueue

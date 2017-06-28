@@ -1,10 +1,20 @@
 import {
     Callback,
+    CloudFormationCustomResourceCreateEvent,
     CloudFormationCustomResourceDeleteEvent,
     CloudFormationCustomResourceEvent,
     CloudFormationCustomResourceResponse,
     Context,
+    SNSEvent,
 } from "aws-lambda";
+import * as AWS from "aws-sdk";
+import {
+    DocumentClient,
+    PutItemInput,
+    PutItemOutput,
+    UpdateItemInput,
+    UpdateItemOutput,
+} from "aws-sdk/clients/dynamodb";
 import * as rpn from "request-promise-native";
 
 function sendCloudFrontResponse(
@@ -16,7 +26,7 @@ function sendCloudFrontResponse(
     let responseBody: CloudFormationCustomResourceResponse;
     if (status === "SUCCESS") {
         responseBody = {
-            Status: status,
+            Status: "SUCCESS",
             PhysicalResourceId: physicalResourceId,
             StackId: event.StackId,
             RequestId: event.RequestId,
@@ -54,7 +64,25 @@ function sendCloudFrontResponse(
 }
 
 function handleCloudFormationResourceEvent(event: CloudFormationCustomResourceEvent): Promise<void> {
-    if ((event as CloudFormationCustomResourceDeleteEvent).RequestType === "Delete") {
+    if ((event as CloudFormationCustomResourceCreateEvent).RequestType === "Create") {
+        // Save all the great info into Dynamo for later
+        const documentClient: DocumentClient = new AWS.DynamoDB.DocumentClient();
+
+        // requestParams hould be a GetItemInput but there's something strange about the typedef of GetItemInput
+        // that TypeScript 2.4.1 complains about
+        const requestParams: any = {
+            TableName: process.env.COUNT_TABLE,
+            Item: {
+                collector: process.env.TOPIC_ARN,
+                messageCount: 0,
+                createEvent: event,
+            },
+        };
+
+        return documentClient.put(requestParams).promise().then((result: PutItemOutput) => {
+            return Promise.resolve();
+        });
+    } else if ((event as CloudFormationCustomResourceDeleteEvent).RequestType === "Delete") {
         // Nothing to delete.  Just tell CloudFormation we're done.
         return sendCloudFrontResponse(
             event,
@@ -67,8 +95,36 @@ function handleCloudFormationResourceEvent(event: CloudFormationCustomResourceEv
     }
 
 }
+
 function getMessageCount(): Promise<number> {
     return Promise.resolve(0);
+}
+
+function handleSNSEvent(event: SNSEvent): Promise<void> {
+    const documentClient: DocumentClient = new AWS.DynamoDB.DocumentClient();
+
+    // requestParams hould be a UpdateItemInput but there's something strange about the typedef of UpdateItemInput
+    // that TypeScript 2.4.1 complains about
+    const requestParams: any = {
+        TableName: process.env.COUNT_TABLE,
+        Key: { collector: process.env.TOPIC_ARN },
+        UpdateExpression: "SET messageCount = messageCount + :increment",
+        ExpressionAttributeValues: {
+            ":increment": 1,
+        },
+    };
+
+    console.log("Dynamo Request: " + JSON.stringify(requestParams));
+
+    return documentClient.update(requestParams).promise().then((updatedItem: UpdateItemOutput) => {
+        console.log("Dynamo Response: " + JSON.stringify(updatedItem));
+
+        // createEvent = updatedItem
+
+        // TODO: More logic here!
+        // return sendCloudFrontResponse();
+        return Promise.resolve();
+    });
 }
 
 exports.handler = (event: any, context: Context, callback: Callback) => {
@@ -82,6 +138,8 @@ exports.handler = (event: any, context: Context, callback: Callback) => {
     Promise.resolve().then(() => {
         if (event.ServiceToken) {
             return handleCloudFormationResourceEvent(event);
+        } else if (event.Records) {
+            return handleSNSEvent(event);
         } else {
             return Promise.reject("Unexpected Lambda Event");
         }
@@ -89,6 +147,9 @@ exports.handler = (event: any, context: Context, callback: Callback) => {
         callback();
         return;
     }).catch( (error) => {
+        // TODO: Rethink error handling for this function.  Should we fail the CloudFront resource if we get an
+        // error handling an SNS message?  We'd only be able to do so if we were able to read from Dynamo and
+        // get the details to communicate with CloudFront.
         return sendCloudFrontResponse(event, "FAILED", "", error).catch().then(() => {
             callback(error);
         });

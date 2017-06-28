@@ -34,7 +34,14 @@ Resources:
         VoipMSUser:
           Ref: VoipMSUser
       TemplateURL: template.yml
+  SNSMessageCollectorStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        SNSTopicArn:
+          Fn::GetAtt: [WrappedStack, Outputs.RegistrationStatusChangeTopicArn]
+      TemplateURL: snsmessagecollectortemplate.yml
 Outputs:
   ResultsQueueArn:
     Value:
-      Fn::GetAtt: [ResultsQueue, Arn]
+      Fn::GetAtt: [SNSMessageCollectorStack, Outputs.ResultsQueueArn]
