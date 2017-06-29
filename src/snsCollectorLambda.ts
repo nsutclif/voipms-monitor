@@ -68,7 +68,7 @@ function handleCloudFormationResourceEvent(event: CloudFormationCustomResourceEv
         // Save all the great info into Dynamo for later
         const documentClient: DocumentClient = new AWS.DynamoDB.DocumentClient();
 
-        // requestParams hould be a GetItemInput but there's something strange about the typedef of GetItemInput
+        // requestParams should be a GetItemInput but there's something strange about the typedef of GetItemInput
         // that TypeScript 2.4.1 complains about
         const requestParams: any = {
             TableName: process.env.COUNT_TABLE,
@@ -96,14 +96,14 @@ function handleCloudFormationResourceEvent(event: CloudFormationCustomResourceEv
 
 }
 
-function getMessageCount(): Promise<number> {
-    return Promise.resolve(0);
+function getPhysicalResourceID(createEvent: CloudFormationCustomResourceCreateEvent) {
+    return [createEvent.StackId, createEvent.LogicalResourceId].join("/");
 }
 
 function handleSNSEvent(event: SNSEvent): Promise<void> {
     const documentClient: DocumentClient = new AWS.DynamoDB.DocumentClient();
 
-    // requestParams hould be a UpdateItemInput but there's something strange about the typedef of UpdateItemInput
+    // requestParams should be a UpdateItemInput but there's something strange about the typedef of UpdateItemInput
     // that TypeScript 2.4.1 complains about
     const requestParams: any = {
         TableName: process.env.COUNT_TABLE,
@@ -112,6 +112,7 @@ function handleSNSEvent(event: SNSEvent): Promise<void> {
         ExpressionAttributeValues: {
             ":increment": 1,
         },
+        ReturnValues: "ALL_NEW",
     };
 
     console.log("Dynamo Request: " + JSON.stringify(requestParams));
@@ -119,11 +120,17 @@ function handleSNSEvent(event: SNSEvent): Promise<void> {
     return documentClient.update(requestParams).promise().then((updatedItem: UpdateItemOutput) => {
         console.log("Dynamo Response: " + JSON.stringify(updatedItem));
 
-        // createEvent = updatedItem
+        const originalCreateEvent: CloudFormationCustomResourceCreateEvent =
+            updatedItem.Attributes.createEvent as CloudFormationCustomResourceCreateEvent;
 
-        // TODO: More logic here!
-        // return sendCloudFrontResponse();
-        return Promise.resolve();
+        const minimumMessagesToCollect: number =
+            Number(originalCreateEvent.ResourceProperties.MinimumMessagesToCollect);
+
+        if (updatedItem.Attributes.messageCount === minimumMessagesToCollect) {
+            return sendCloudFrontResponse(originalCreateEvent, "SUCCESS", getPhysicalResourceID(originalCreateEvent));
+        } else {
+            return Promise.resolve();
+        }
     });
 }
 
@@ -132,7 +139,7 @@ exports.handler = (event: any, context: Context, callback: Callback) => {
     console.log(JSON.stringify(event));
 
     // TODO:
-    // Pass a unique string into t his function for a physical id.
+    // Pass a unique string into this function for a physical id.
     // Allow this function to be called with a CloudFormationCustomResourceEvent or an SNSEvent or a timer event
 
     Promise.resolve().then(() => {
