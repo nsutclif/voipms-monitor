@@ -61,18 +61,28 @@ Resources:
       ManagedPolicyArns:
       - arn:aws:iam::aws:policy/AWSLambdaExecute
       Policies:
-        - PolicyName: CountTableAccess
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              # Allow the Lambda function to use the table:
-              - Effect: Allow
-                Action:
-                  - dynamodb:GetItem
-                  - dynamodb:PutItem
-                  - dynamodb:UpdateItem
-                Resource:
-                  Fn::Sub: arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${CountTable}
+      - PolicyName: NoCreateLogGroups
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+          # Don't allow Lambda function to re-create its groups while CloudFormation is
+          # deleting the stack
+          - Effect: Deny
+            Action:
+            - logs:CreateLogGroup
+            Resource: arn:aws:logs:*:*:*
+      - PolicyName: CountTableAccess
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+          # Allow the Lambda function to use the table:
+          - Effect: Allow
+            Action:
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+            - dynamodb:UpdateItem
+            Resource:
+              Fn::Sub: arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${CountTable}
   CollectorFunction:
     Type: AWS::Lambda::Function
     Properties:
