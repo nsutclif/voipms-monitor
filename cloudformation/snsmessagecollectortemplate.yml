@@ -11,9 +11,15 @@ Parameters:
   MinimumMessagesToCollect:
     Type: Number
     MinValue: 0
-  MaximumSecondsToWait:
+  MaximumMinutesToWait:
     Type: Number
     MinValue: 0
+
+Conditions:
+  CreateTimeoutEvent:
+    Fn::Not: [Fn::Equals: [Ref: MaximumMinutesToWait, 0]]
+  OneMinuteTimeout:
+    Fn::Equals: [Ref: MaximumMinutesToWait, 1]
 
 Resources:
   # Capture the SNS messages in this SQS queue:
@@ -145,11 +151,35 @@ Resources:
         Fn::GetAtt: [CollectorFunction, Arn]
       MinimumMessagesToCollect:
         Ref: MinimumMessagesToCollect
-      MaximumSecondsToWait:
-        Ref: MaximumSecondsToWait
+      MaximumMinutesToWait:
+        Ref: MaximumMinutesToWait
     # Prevent Lambda function from creating the log group so the stack doesn't error when it tries to do it again:
     DependsOn:
       CollectorFunctionLogGroup
+  TimeoutEvent:
+    Type: AWS::Events::Rule
+    Properties:
+      ScheduleExpression:
+        # Need to say "1 minute" (singular) or "2 minutes" (plural)
+        Fn::If: [OneMinuteTimeout, rate(1 minute), Fn::Sub: "rate(${MaximumMinutesToWait} minutes)"]
+      Targets:
+      - Id: PollLambdaTarget
+        Arn:
+          Fn::GetAtt: [CollectorFunction, Arn]
+    Condition:
+      CreateTimeoutEvent
+  # Allow Cloudwatch Event to trigger Lambda:
+  TimeoutEventPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName:
+        Fn::GetAtt: [CollectorFunction, Arn]
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn:
+        Fn::GetAtt: [TimeoutEvent, Arn]
+    Condition:
+      CreateTimeoutEvent
 Outputs:
   ResultsQueueArn:
     Value:

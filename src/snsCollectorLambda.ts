@@ -63,25 +63,61 @@ function sendCloudFrontResponse(
     });
 }
 
+function setUpDynamoRecord(event: CloudFormationCustomResourceCreateEvent): Promise<void> {
+    // Save all the great info into Dynamo for later
+    const documentClient: DocumentClient = new AWS.DynamoDB.DocumentClient();
+
+    // requestParams should be a GetItemInput but there's something strange about the typedef of GetItemInput
+    // that TypeScript 2.4.1 complains about
+    const requestParams: any = {
+        TableName: process.env.COUNT_TABLE,
+        Item: {
+            collector: process.env.TOPIC_ARN,
+            messageCount: 0,
+            createEvent: event,
+        },
+    };
+
+    return documentClient.put(requestParams).promise().then((result: PutItemOutput) => {
+        return Promise.resolve();
+    });
+}
+
+function handleTimeout(
+    originalCreateEvent: CloudFormationCustomResourceCreateEvent,
+    physicalResourceId: string,
+): Promise<void> {
+    const minimumMessageToCollect: number =
+        Number(originalCreateEvent.ResourceProperties.MinimumMessagesToCollect) || 0;
+
+    // TODO: Add a FailOnTimeout parameter?
+
+    if (minimumMessageToCollect === 0) {
+        return sendCloudFrontResponse(originalCreateEvent, "SUCCESS", physicalResourceId);
+    } else {
+        return sendCloudFrontResponse(originalCreateEvent, "FAILED", physicalResourceId);
+    }
+}
+
 function handleCloudFormationResourceEvent(event: CloudFormationCustomResourceEvent): Promise<void> {
     if ((event as CloudFormationCustomResourceCreateEvent).RequestType === "Create") {
-        // Save all the great info into Dynamo for later
-        const documentClient: DocumentClient = new AWS.DynamoDB.DocumentClient();
+        const minimumMessageToCollect: number = Number(event.ResourceProperties.MinimumMessagesToCollect) || 0;
+        const maximumMinutesToWait: number = Number(event.ResourceProperties.MaximumMinutesToWait) || 0;
 
-        // requestParams should be a GetItemInput but there's something strange about the typedef of GetItemInput
-        // that TypeScript 2.4.1 complains about
-        const requestParams: any = {
-            TableName: process.env.COUNT_TABLE,
-            Item: {
-                collector: process.env.TOPIC_ARN,
-                messageCount: 0,
-                createEvent: event,
-            },
-        };
-
-        return documentClient.put(requestParams).promise().then((result: PutItemOutput) => {
-            return Promise.resolve();
-        });
+        if (minimumMessageToCollect === 0) {
+            // Nothing to wait for, we're done...
+            return sendCloudFrontResponse(
+                event,
+                "SUCCESS",
+                getPhysicalResourceID(event as CloudFormationCustomResourceCreateEvent),
+            );
+        } else if ( maximumMinutesToWait === 0 ) {
+            // we've already timed out!
+            return handleTimeout(
+                event as CloudFormationCustomResourceCreateEvent,
+                getPhysicalResourceID(event as CloudFormationCustomResourceCreateEvent),
+            );
+        }
     } else if ((event as CloudFormationCustomResourceDeleteEvent).RequestType === "Delete") {
         // Nothing to delete.  Just tell CloudFormation we're done.
         return sendCloudFrontResponse(
