@@ -86,6 +86,7 @@ function setUpDynamoRecord(event: CloudFormationCustomResourceCreateEvent): Prom
 function handleTimeout(
     originalCreateEvent: CloudFormationCustomResourceCreateEvent,
     physicalResourceId: string,
+    messagesReceived: number,
 ): Promise<void> {
     const minimumMessageToCollect: number =
         Number(originalCreateEvent.ResourceProperties.MinimumMessagesToCollect) || 0;
@@ -95,7 +96,11 @@ function handleTimeout(
     if (minimumMessageToCollect === 0) {
         return sendCloudFrontResponse(originalCreateEvent, "SUCCESS", physicalResourceId);
     } else {
-        return sendCloudFrontResponse(originalCreateEvent, "FAILED", physicalResourceId);
+        return sendCloudFrontResponse(originalCreateEvent,
+            "FAILED",
+            physicalResourceId,
+            "Expected to collect " + minimumMessageToCollect + " messages but only collected " + messagesReceived,
+        );
     }
 }
 
@@ -116,6 +121,7 @@ function handleCloudFormationResourceEvent(event: CloudFormationCustomResourceEv
             return handleTimeout(
                 event as CloudFormationCustomResourceCreateEvent,
                 getPhysicalResourceID(event as CloudFormationCustomResourceCreateEvent),
+                0,
             );
         }
     } else if ((event as CloudFormationCustomResourceDeleteEvent).RequestType === "Delete") {
