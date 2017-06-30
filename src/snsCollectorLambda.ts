@@ -230,13 +230,7 @@ exports.handler = (event: any, context: Context, callback: Callback) => {
         }
     }).then(() => {
         callback();
-        return;
-    }).catch( (error) => {
-        // TODO: Rethink error handling for this function.  Should we fail the CloudFront resource if we get an
-        // error handling an SNS message?  We'd only be able to do so if we were able to read from Dynamo and
-        // get the details to communicate with CloudFront.
-        return sendCloudFrontResponse(event, "FAILED", "", error).catch().then(() => {
-            callback(error);
-        });
+    }).catch((error) => {
+        callback(error);
     });
 };
