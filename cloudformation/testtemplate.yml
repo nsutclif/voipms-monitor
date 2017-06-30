@@ -38,15 +38,21 @@ Resources:
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
-        IntervalMinutes: 2
+        IntervalMinutes: 3
         NotificationEmail: ""
         VoipMSAccount: "test"
         VoipMSPassword: "test"
         VoipMSUser: "test"
-      Tags:
-        - Key: Test
-          Value: "Bad Password"
-      TemplateURL: sqsredirectedtemplate.yml
+      TemplateURL: template.yml
+  SNSMessageCollectorStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        SNSTopicArn:
+          Fn::GetAtt: [BadPasswordStack, Outputs.RegistrationStatusChangeTopicArn]
+        MinimumMessagesToCollect: 1
+        MaximumMinutesToWait: 5
+      TemplateURL: snsmessagecollectortemplate.yml
   CompleteStatus:
     Type: Custom::GitHubStatus
     Properties:
