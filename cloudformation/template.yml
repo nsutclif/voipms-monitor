@@ -53,6 +53,7 @@ Resources:
                   - sns:Publish
                 Resource:
                   Ref: RegistrationStatusChangeTopic
+  # Create a log group for the Lambda function so that it gets deleted when the stack is deleted.
   PollFunction:
     Type: AWS::Lambda::Function
     Properties:
@@ -76,7 +77,6 @@ Resources:
             Ref: RegistrationStatusChangeTopic
       Role:
         Fn::GetAtt: [PollFunctionLambdaExecutionRole, Arn]
-  # Create a log group for the Lambda function so that it gets deleted when the stack is deleted.
   PollFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
