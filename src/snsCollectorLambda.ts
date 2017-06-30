@@ -106,38 +106,43 @@ function handleTimeout(
 }
 
 function handleCloudFormationResourceEvent(event: CloudFormationCustomResourceEvent): Promise<void> {
-    if ((event as CloudFormationCustomResourceCreateEvent).RequestType === "Create") {
-        const minimumMessageToCollect: number = Number(event.ResourceProperties.MinimumMessagesToCollect) || 0;
-        const maximumMinutesToWait: number = Number(event.ResourceProperties.MaximumMinutesToWait) || 0;
+    return Promise.resolve().then(() => {
+        if ((event as CloudFormationCustomResourceCreateEvent).RequestType === "Create") {
+            const minimumMessageToCollect: number = Number(event.ResourceProperties.MinimumMessagesToCollect) || 0;
+            const maximumMinutesToWait: number = Number(event.ResourceProperties.MaximumMinutesToWait) || 0;
 
-        if (minimumMessageToCollect === 0) {
-            // Nothing to wait for, we're done...
+            if (minimumMessageToCollect === 0) {
+                // Nothing to wait for, we're done...
+                return sendCloudFrontResponse(
+                    event,
+                    "SUCCESS",
+                    getPhysicalResourceID(event as CloudFormationCustomResourceCreateEvent),
+                );
+            } else if ( maximumMinutesToWait === 0 ) {
+                // we've already timed out!
+                return handleTimeout(
+                    event as CloudFormationCustomResourceCreateEvent,
+                    getPhysicalResourceID(event as CloudFormationCustomResourceCreateEvent),
+                    0,
+                );
+            }
+            return setUpDynamoRecord(event as CloudFormationCustomResourceCreateEvent);
+        } else if ((event as CloudFormationCustomResourceDeleteEvent).RequestType === "Delete") {
+            // Nothing to delete.  Just tell CloudFormation we're done.
             return sendCloudFrontResponse(
                 event,
                 "SUCCESS",
-                getPhysicalResourceID(event as CloudFormationCustomResourceCreateEvent),
+                (event as CloudFormationCustomResourceDeleteEvent).PhysicalResourceId,
             );
-        } else if ( maximumMinutesToWait === 0 ) {
-            // we've already timed out!
-            return handleTimeout(
-                event as CloudFormationCustomResourceCreateEvent,
-                getPhysicalResourceID(event as CloudFormationCustomResourceCreateEvent),
-                0,
-            );
+        } else {
+            // We will tell CloudFormation we're done when we get the messages in that we're waiting for.
+            return Promise.resolve();
         }
-        return setUpDynamoRecord(event as CloudFormationCustomResourceCreateEvent);
-    } else if ((event as CloudFormationCustomResourceDeleteEvent).RequestType === "Delete") {
-        // Nothing to delete.  Just tell CloudFormation we're done.
-        return sendCloudFrontResponse(
-            event,
-            "SUCCESS",
-            (event as CloudFormationCustomResourceDeleteEvent).PhysicalResourceId,
-        );
-    } else {
-        // We will tell CloudFormation we're done when we get the messages in that we're waiting for.
-        return Promise.resolve();
-    }
-
+    }).catch((error) => {
+        return sendCloudFrontResponse(event, "FAILED", "", error).then(() => {
+            return Promise.reject(error);
+        });
+    });
 }
 
 function getPhysicalResourceID(createEvent: CloudFormationCustomResourceCreateEvent) {
