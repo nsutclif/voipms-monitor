@@ -10,6 +10,7 @@ import {
 import * as AWS from "aws-sdk";
 import {
     DocumentClient,
+    GetItemOutput,
     PutItemInput,
     PutItemOutput,
     UpdateItemInput,
@@ -67,7 +68,7 @@ function setUpDynamoRecord(event: CloudFormationCustomResourceCreateEvent): Prom
     // Save all the great info into Dynamo for later
     const documentClient: DocumentClient = new AWS.DynamoDB.DocumentClient();
 
-    // requestParams should be a GetItemInput but there's something strange about the typedef of GetItemInput
+    // requestParams should be a PutItemInput but there's something strange about the typedef of PutItemInput
     // that TypeScript 2.4.1 complains about
     const requestParams: any = {
         TableName: process.env.COUNT_TABLE,
@@ -124,6 +125,7 @@ function handleCloudFormationResourceEvent(event: CloudFormationCustomResourceEv
                 0,
             );
         }
+        return setUpDynamoRecord(event as CloudFormationCustomResourceCreateEvent);
     } else if ((event as CloudFormationCustomResourceDeleteEvent).RequestType === "Delete") {
         // Nothing to delete.  Just tell CloudFormation we're done.
         return sendCloudFrontResponse(
@@ -176,6 +178,33 @@ function handleSNSEvent(event: SNSEvent): Promise<void> {
     });
 }
 
+function handleTimerEvent(event: any): Promise<void> {
+    const documentClient: DocumentClient = new AWS.DynamoDB.DocumentClient();
+
+    // requestParams should be a GetItemInput but there's something strange about the typedef of GetItemInput
+    // that TypeScript 2.4.1 complains about
+    const requestParams: any = {
+        TableName: process.env.COUNT_TABLE,
+        Key: { collector: process.env.TOPIC_ARN },
+    };
+
+    console.log("Dynamo Request: " + JSON.stringify(requestParams));
+
+    return documentClient.get(requestParams).promise().then((getItemOutput: GetItemOutput) => {
+        console.log("Dynamo Response: " + JSON.stringify(getItemOutput));
+
+        if (getItemOutput.Item) {
+            const originalCreateEvent: CloudFormationCustomResourceCreateEvent =
+                getItemOutput.Item.createEvent as CloudFormationCustomResourceCreateEvent;
+            const messageCount: number = Number(getItemOutput.Item.messageCount);
+
+            return handleTimeout(originalCreateEvent, getPhysicalResourceID(originalCreateEvent), messageCount);
+        } else {
+            return Promise.reject("Timer event recieved before DynamoDB record saved!");
+        }
+    });
+}
+
 exports.handler = (event: any, context: Context, callback: Callback) => {
     console.log("Begin Handler");
     console.log(JSON.stringify(event));
@@ -189,6 +218,8 @@ exports.handler = (event: any, context: Context, callback: Callback) => {
             return handleCloudFormationResourceEvent(event);
         } else if (event.Records) {
             return handleSNSEvent(event);
+        } else if (event.source) {
+            return handleTimerEvent(event);
         } else {
             return Promise.reject("Unexpected Lambda Event");
         }
