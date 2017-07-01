@@ -1,0 +1,67 @@
+AWSTemplateFormatVersion : "2010-09-09"
+Description: A CloudFormation custom resource that runs a test
+
+Parameters:
+  TestParameters: # Should these be passed in to the Lambda or to the Custom::Test?
+    Type: CommaDelimitedList
+  CodeS3Key:
+    Type: String
+  LambdaHandler:
+    Type: String
+
+Resources:
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Path: "/"
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/AWSLambdaExecute
+      Policies:
+      - PolicyName: NoCreateLogGroups
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+          # Don't allow Lambda function to re-create its groups while CloudFormation is
+          # deleting the stack
+          - Effect: Deny
+            Action:
+            - logs:CreateLogGroup
+            Resource: arn:aws:logs:*:*:*
+  CfnTestFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket: fillinlater
+        S3Key: 
+          Ref: CodeS3Key
+      Handler:
+        Ref: LambdaHandler
+      Runtime: nodejs6.10
+      Role:
+        Fn::GetAtt: [LambdaExecutionRole, Arn]
+  # Create a log group for the Lambda function so that it gets deleted when the stack is deleted.
+  CfnTestFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName:
+        Fn::Sub: /aws/lambda/${CfnTestFunction}
+  BadPasswordTest:
+    Type: Custom::Test
+    Properties:
+      ServiceToken:
+        Fn::GetAtt: [CfnTestFunction, Arn]
+      Parameters:
+        Ref: TestParameters
+# Outputs:
+#   CfnTestFunctionArn:
+#     Value:
+#       Fn::GetAtt: [CfnTestFunction, Arn]

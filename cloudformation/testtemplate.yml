@@ -53,6 +53,21 @@ Resources:
         MinimumMessagesToCollect: 1
         MaximumMinutesToWait: 5
       TemplateURL: snsmessagecollectortemplate.yml
+  # CfnTest custom resources:
+  CfnTestStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: cfn-test-template.yml
+      Parameters:
+        CodeS3Key: bad-password-test-lambda.ts.ts
+        LambdaHandler: built/bad-password-test-lambda.handler
+        TestParameters:
+          Fn::Join:
+          - ","
+          - - Fn::Join:
+              - ":"
+              - - RESULTS_SQS_QUEUE_ARN
+                - Fn::GetAtt: [SNSMessageCollectorStack, Outputs.ResultsQueueArn]
   CompleteStatus:
     Type: Custom::GitHubStatus
     Properties:
