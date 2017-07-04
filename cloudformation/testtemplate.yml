@@ -53,6 +53,20 @@ Resources:
         MinimumMessagesToCollect: 1
         MaximumMinutesToWait: 5
       TemplateURL: snsmessagecollectortemplate.yml
+  BadPasswordTestPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        - Effect: Allow
+          Action:
+          - sqs:ReceiveMessage
+          - sqs:DeleteMessageBatch
+          Resource:
+          - Fn::GetAtt: [SNSMessageCollectorStack, Outputs.ResultsQueueArn]
+      ManagedPolicyName: 
+        Fn::Sub: ${AWS::StackName}-BadPasswordTestPolicy
   # CfnTest custom resources:
   CfnTestStack:
     Type: AWS::CloudFormation::Stack
@@ -65,9 +79,15 @@ Resources:
           Fn::Join:
           - ","
           - - Fn::Join:
-              - ":"
-              - - RESULTS_SQS_QUEUE_ARN
-                - Fn::GetAtt: [SNSMessageCollectorStack, Outputs.ResultsQueueArn]
+              - "="
+              # It would be nice to URL encode these here...
+              - - ResultsSQSQueueURL
+                - Fn::GetAtt: [SNSMessageCollectorStack, Outputs.ResultsQueueURL]
+        LambdaManagedPolicyArns:
+          Fn::Join:
+          - ","
+          - - arn:aws:iam::aws:policy/AWSLambdaExecute
+            - Ref: BadPasswordTestPolicy
   CompleteStatus:
     Type: Custom::GitHubStatus
     Properties:

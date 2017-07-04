@@ -4,6 +4,13 @@ import {
     CloudFormationCustomResourceResponse,
     Context,
 } from "aws-lambda";
+import * as AWS from "aws-sdk";
+// import {
+//     ReceiveMessageRequest,
+//     ReceiveMessageResult,
+// } from "aws-sdk/clients/SQS";
+import * as SQS from "aws-sdk/clients/SQS";
+import {expect} from "chai";
 import * as rpn from "request-promise-native";
 
 function sendCloudFrontResponse(
@@ -55,8 +62,50 @@ function sendCloudFrontResponse(
     });
 }
 
-function runTest(): Promise<void> {
-    return Promise.resolve();
+function runTest(testParameters: any): Promise<void> {
+    const sqs: SQS = new AWS.SQS();
+
+    const requestOptions: SQS.ReceiveMessageRequest = {
+        QueueUrl: testParameters.ResultsSQSQueueURL,
+        MaxNumberOfMessages: 10,
+    };
+
+    console.log("receiveMessage request: " + JSON.stringify(requestOptions));
+
+    return sqs.receiveMessage(requestOptions).promise().then((result: SQS.ReceiveMessageResult) => {
+        console.log("receiveMessage result: " + JSON.stringify(result));
+
+        // tslint:disable-next-line:no-unused-expression
+        expect(result.Messages).to.exist;
+
+        return Promise.resolve();
+    }).catch((error) => {
+        console.log(JSON.stringify(error));
+        return Promise.reject(error);
+    });
+}
+
+function parseParameters(parameters: any[]): any {
+    // The parameters get passed in here in the form of an array:
+    // [param1=value1, param2=value2]
+
+    const result: any = {};
+
+    if (!Array.isArray(parameters)) {
+        throw new Error("Parameters must be an array.");
+    }
+
+    parameters.forEach((parameter: string) => {
+        console.log("parameter: " + parameter);
+        console.log(typeof(parameter));
+        const keyValueArray: string[] = parameter.split("=");
+        if (keyValueArray.length !== 2) {
+            throw new Error("Could not parse parameter key value pair: " + parameter);
+        }
+        result[keyValueArray[0]] = keyValueArray[1];
+    });
+
+    return result;
 }
 
 exports.handler = (event: CloudFormationCustomResourceEvent, context: Context, callback: Callback) => {
@@ -65,7 +114,12 @@ exports.handler = (event: CloudFormationCustomResourceEvent, context: Context, c
 
     Promise.resolve().then(() => {
         if (event.RequestType === "Create") { // What to do on Update?
-            return runTest();
+            console.log("about to parse parameters: " + event.ResourceProperties.Parameters);
+
+            const testParameters: any = parseParameters(event.ResourceProperties.Parameters);
+
+            console.log("parsed parameters: " + JSON.stringify(testParameters));
+            return runTest(testParameters);
         } else {
             return Promise.resolve();
         }
@@ -74,7 +128,8 @@ exports.handler = (event: CloudFormationCustomResourceEvent, context: Context, c
             callback();
         });
     }).catch((error) => {
-        return sendCloudFrontResponse(event, "FAILED", "", error).catch().then(() => {
+        console.log("caught error: " + error);
+        return sendCloudFrontResponse(event, "FAILED", "asdf", error).catch().then(() => {
             callback(error);
         });
     });
