@@ -30,7 +30,7 @@
     "@types/js-yaml": "3.5.31",
     "@types/gulp": "^4.0.4",
     "@types/node": "7.0.29",
-    "@types/request-promise-native": "1.0.5",
+    "@types/request-promise-native": "1.0.6",
     "@types/vinyl": "2.0.0",
     "aws-sdk": "2.82.0",
     "gulp": "3.9.1",
