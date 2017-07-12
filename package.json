@@ -27,7 +27,7 @@
   },
   "devDependencies": {
     "@types/aws-lambda": "0.0.14",
-    "@types/js-yaml": "3.5.31",
+    "@types/js-yaml": "3.9.0",
     "@types/gulp": "^4.0.4",
     "@types/node": "7.0.29",
     "@types/request-promise-native": "1.0.6",
