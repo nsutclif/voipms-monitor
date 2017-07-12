@@ -1,6 +1,6 @@
 import * as AWS from "aws-sdk";
-import { DocumentClient, GetItemInput, GetItemOutput, PutItemInput } from "aws-sdk/clients/dynamodb";
 import { PublishInput } from "aws-sdk/clients/sns";
+import { DocumentClient } from "aws-sdk/lib/dynamodb/document_client";
 import * as rpn from "request-promise-native";
 
 // "https://voip.ms/api/v1/rest.php
@@ -76,15 +76,13 @@ function getPreviousRegistration(
     account: string,
 ): Promise<FocusedRegistrationStatus> {
     return Promise.resolve().then(() => {
-        // requestParams should be a GetItemInput but there's something strange about the typedef of GetItemInput
-        // that TypeScript 2.4.1 complains about
-        const requestParams: any = {
+        const requestParams: DocumentClient.GetItemInput = {
             TableName: tableName,
             Key: { account },
         };
         console.log("Gettting Previous Registration: " + JSON.stringify(requestParams));
         return documentClient.get(requestParams).promise();
-    }).then((dynamoResult: GetItemOutput) => {
+    }).then((dynamoResult: DocumentClient.GetItemOutput) => {
         if (dynamoResult.Item) {
             return getRegistrationForComparison(dynamoResult.Item.registrationStatus as any);
         } else {
@@ -100,9 +98,7 @@ function saveRegistration(
     registrationStatus: FocusedRegistrationStatus,
 ): Promise<void> {
     return Promise.resolve().then(() => {
-        // requestParams should be a PutItemInput but there's something strange about the typedef of PutItemInput
-        // that TypeScript 2.4.1 complains about
-        const requestParams: any = {
+        const requestParams: DocumentClient.PutItemInput = {
             TableName: tableName,
             Item: {
                 account,

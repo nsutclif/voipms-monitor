@@ -8,14 +8,7 @@ import {
     SNSEvent,
 } from "aws-lambda";
 import * as AWS from "aws-sdk";
-import {
-    DocumentClient,
-    GetItemOutput,
-    PutItemInput,
-    PutItemOutput,
-    UpdateItemInput,
-    UpdateItemOutput,
-} from "aws-sdk/clients/dynamodb";
+import { DocumentClient } from "aws-sdk/lib/dynamodb/document_client";
 import * as rpn from "request-promise-native";
 
 function sendCloudFrontResponse(
@@ -68,9 +61,7 @@ function setUpDynamoRecord(event: CloudFormationCustomResourceCreateEvent): Prom
     // Save all the great info into Dynamo for later
     const documentClient: DocumentClient = new AWS.DynamoDB.DocumentClient();
 
-    // requestParams should be a PutItemInput but there's something strange about the typedef of PutItemInput
-    // that TypeScript 2.4.1 complains about
-    const requestParams: any = {
+    const requestParams: DocumentClient.PutItemInput = {
         TableName: process.env.COUNT_TABLE,
         Item: {
             collector: process.env.TOPIC_ARN,
@@ -79,7 +70,7 @@ function setUpDynamoRecord(event: CloudFormationCustomResourceCreateEvent): Prom
         },
     };
 
-    return documentClient.put(requestParams).promise().then((result: PutItemOutput) => {
+    return documentClient.put(requestParams).promise().then((result: DocumentClient.PutItemOutput) => {
         return Promise.resolve();
     });
 }
@@ -152,9 +143,7 @@ function getPhysicalResourceID(createEvent: CloudFormationCustomResourceCreateEv
 function handleSNSEvent(event: SNSEvent): Promise<void> {
     const documentClient: DocumentClient = new AWS.DynamoDB.DocumentClient();
 
-    // requestParams should be a UpdateItemInput but there's something strange about the typedef of UpdateItemInput
-    // that TypeScript 2.4.1 complains about
-    const requestParams: any = {
+    const requestParams: DocumentClient.UpdateItemInput = {
         TableName: process.env.COUNT_TABLE,
         Key: { collector: process.env.TOPIC_ARN },
         UpdateExpression: "SET messageCount = messageCount + :increment",
@@ -166,7 +155,7 @@ function handleSNSEvent(event: SNSEvent): Promise<void> {
 
     console.log("Dynamo Request: " + JSON.stringify(requestParams));
 
-    return documentClient.update(requestParams).promise().then((updatedItem: UpdateItemOutput) => {
+    return documentClient.update(requestParams).promise().then((updatedItem: DocumentClient.UpdateItemOutput) => {
         console.log("Dynamo Response: " + JSON.stringify(updatedItem));
 
         const originalCreateEvent: CloudFormationCustomResourceCreateEvent =
@@ -186,16 +175,14 @@ function handleSNSEvent(event: SNSEvent): Promise<void> {
 function handleTimerEvent(event: any): Promise<void> {
     const documentClient: DocumentClient = new AWS.DynamoDB.DocumentClient();
 
-    // requestParams should be a GetItemInput but there's something strange about the typedef of GetItemInput
-    // that TypeScript 2.4.1 complains about
-    const requestParams: any = {
+    const requestParams: DocumentClient.GetItemInput = {
         TableName: process.env.COUNT_TABLE,
         Key: { collector: process.env.TOPIC_ARN },
     };
 
     console.log("Dynamo Request: " + JSON.stringify(requestParams));
 
-    return documentClient.get(requestParams).promise().then((getItemOutput: GetItemOutput) => {
+    return documentClient.get(requestParams).promise().then((getItemOutput: DocumentClient.GetItemOutput) => {
         console.log("Dynamo Response: " + JSON.stringify(getItemOutput));
 
         if (getItemOutput.Item) {
