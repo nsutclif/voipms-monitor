@@ -9,7 +9,7 @@ import * as AWS from "aws-sdk";
 //     ReceiveMessageRequest,
 //     ReceiveMessageResult,
 // } from "aws-sdk/clients/SQS";
-import * as SQS from "aws-sdk/clients/SQS";
+import * as SQS from "aws-sdk/clients/sqs";
 import {expect} from "chai";
 import * as rpn from "request-promise-native";
 
