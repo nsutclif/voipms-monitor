@@ -29,18 +29,18 @@
   "devDependencies": {
     "@types/aws-lambda": "0.0.14",
     "@types/chai": "4.0.1",
-    "@types/js-yaml": "3.5.31",
     "@types/gulp": "^4.0.4",
+    "@types/js-yaml": "3.9.0",
     "@types/node": "7.0.29",
-    "@types/request-promise-native": "1.0.5",
+    "@types/request-promise-native": "1.0.6",
     "@types/vinyl": "2.0.0",
-    "aws-sdk": "2.80.0",
+    "aws-sdk": "2.82.0",
     "gulp": "3.9.1",
     "gulp-modify-file": "0.1.0",
     "gulp-s3-upload": "1.6.4",
     "gulp-zip": "4.0.0",
-    "js-yaml": "3.8.4",
-    "tslint": "5.4.3",
+    "js-yaml": "3.9.0",
+    "tslint": "5.5.0",
     "typescript": "2.4.1",
     "vinyl": "2.1.0"
   }
