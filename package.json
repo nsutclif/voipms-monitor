@@ -22,13 +22,15 @@
   },
   "homepage": "https://github.com/nsutclif/voipms-monitor#readme",
   "dependencies": {
+    "chai": "4.0.2",
     "request": "2.81.0",
     "request-promise-native": "1.0.4"
   },
   "devDependencies": {
     "@types/aws-lambda": "0.0.14",
-    "@types/js-yaml": "3.9.0",
+    "@types/chai": "4.0.1",
     "@types/gulp": "^4.0.4",
+    "@types/js-yaml": "3.9.0",
     "@types/node": "7.0.29",
     "@types/request-promise-native": "1.0.6",
     "@types/vinyl": "2.0.0",
