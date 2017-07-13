@@ -113,8 +113,7 @@ function saveRegistration(
 }
 
 function publishChange(
-    previousStatus: FocusedRegistrationStatus,
-    currentStatus: FocusedRegistrationStatus,
+    message: string,
     region: string,
     registrationStatusChangeTopic: string,
 ): Promise<void> {
@@ -122,10 +121,7 @@ function publishChange(
     return Promise.resolve().then(() => {
         const requestParams: PublishInput = {
             Subject: "Voip.ms registration status change",
-            Message:
-                "Voip.ms registration status has changed.\n" +
-                "Previous Status: " + JSON.stringify(previousStatus) + "\n" +
-                "Current Status: " + JSON.stringify(currentStatus),
+            Message: message,
             TopicArn: registrationStatusChangeTopic,
         };
         console.log("Publishing to SNS Topic: " + JSON.stringify(requestParams));
@@ -133,6 +129,22 @@ function publishChange(
     }).then(() => {
         return Promise.resolve();
     });
+}
+
+function getSortedIPList(registrations: FocusedRegistration[]): string {
+    if (!registrations.length) {
+        return "";
+    } else {
+        return registrations.sort((a, b) => {
+            if (a.register_ip < b.register_ip) {
+                return -1;
+            } else if (a.register_ip > b.register_ip) {
+                return 1;
+            } else {
+                return 0;
+            }
+        }).join(",");
+    }
 }
 
 export function pollVoipms(
@@ -157,11 +169,34 @@ export function pollVoipms(
         const previousStatus: FocusedRegistrationStatus = results[0];
         const currentStatus: FocusedRegistrationStatus = results[1];
 
-        if (JSON.stringify(previousStatus) !== JSON.stringify(currentStatus)) {
-            console.log("Difference detected");
+        let message: string = "";
+
+        let previousRegisteredIPs: string = "";
+        if (previousStatus) {
+            previousRegisteredIPs = getSortedIPList(previousStatus.registrations);
+        }
+        const currentRegisteredIPs = getSortedIPList(currentStatus.registrations);
+
+        if (!previousStatus && currentStatus.registered) {
+            if (!currentStatus.registrations.length) {
+                throw new Error("Unexpected response: registered=true but registrations is empty");
+            }
+
+            message = "Newly registered at " + currentRegisteredIPs;
+        } else if (!currentStatus.registered) {
+            message = "No longer registered.";
+        } else if (previousRegisteredIPs !== currentRegisteredIPs) {
+            message =
+                "IP Addresss changed.\n" +
+                "Was at " + previousRegisteredIPs + "\n" +
+                "Now at " + currentRegisteredIPs;
+        }
+
+        if (message) {
+            console.log(message);
             return Promise.all([
                 saveRegistration(documentClient, registrationStatusTableName, account, currentStatus),
-                publishChange(previousStatus, currentStatus, region, registrationStatusChangeTopic),
+                publishChange(message, region, registrationStatusChangeTopic),
             ]);
         } else {
             console.log("No Difference");
