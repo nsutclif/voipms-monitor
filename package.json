@@ -31,7 +31,7 @@
     "@types/chai": "4.0.1",
     "@types/gulp": "^4.0.4",
     "@types/js-yaml": "3.9.0",
-    "@types/node": "7.0.29",
+    "@types/node": "8.0.12",
     "@types/request-promise-native": "1.0.6",
     "@types/vinyl": "2.0.0",
     "aws-sdk": "2.83.0",
