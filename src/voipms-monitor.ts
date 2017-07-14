@@ -24,57 +24,25 @@ interface RegistrationStatus {
     registrations: Registration[];
 }
 
-interface FocusedRegistration {
-    server_shortname: string;
-    register_ip: string;
-}
-
-interface FocusedRegistrationStatus {
-    registered: string;
-    registrations: FocusedRegistration[];
-}
-
 function requestCurrentRegistrationStatus(
     user: string,
     password: string,
     account: string,
-): Promise<FocusedRegistrationStatus> {
+): Promise<RegistrationStatus> {
     const rpcURL: string =
         "https://voip.ms/api/v1/rest.php?" +
         "api_username=" + user +
         "&api_password=" + password +
         "&method=getRegistrationStatus" +
         "&account=" + account;
-    return rpn(rpcURL).then( (result: string) => {
-        return getRegistrationForComparison(JSON.parse(result));
-    });
-}
-
-function getRegistrationForComparison(status: RegistrationStatus): FocusedRegistrationStatus {
-    let registrations: FocusedRegistration[];
-    if (Array.isArray(status.registrations)) {
-        registrations = status.registrations.map((registration: Registration): FocusedRegistration => {
-            return {
-                server_shortname: registration.server_shortname,
-                register_ip: registration.register_ip,
-            };
-        });
-    }
-    if (status) {
-        return {
-            registered: status.registered,
-            registrations,
-        };
-    } else {
-        return;
-    }
+    return rpn(rpcURL);
 }
 
 function getPreviousRegistration(
     documentClient: DocumentClient,
     tableName: string,
     account: string,
-): Promise<FocusedRegistrationStatus> {
+): Promise<RegistrationStatus> {
     return Promise.resolve().then(() => {
         const requestParams: DocumentClient.GetItemInput = {
             TableName: tableName,
@@ -84,7 +52,7 @@ function getPreviousRegistration(
         return documentClient.get(requestParams).promise();
     }).then((dynamoResult: DocumentClient.GetItemOutput) => {
         if (dynamoResult.Item) {
-            return getRegistrationForComparison(dynamoResult.Item.registrationStatus as any);
+            return dynamoResult.Item.registrationStatus;
         } else {
             return Promise.resolve(undefined);
         }
@@ -95,7 +63,7 @@ function saveRegistration(
     documentClient: DocumentClient,
     tableName: string,
     account: string,
-    registrationStatus: FocusedRegistrationStatus,
+    registrationStatus: RegistrationStatus,
 ): Promise<void> {
     return Promise.resolve().then(() => {
         const requestParams: DocumentClient.PutItemInput = {
@@ -131,7 +99,7 @@ function publishChange(
     });
 }
 
-function getSortedIPList(registrations: FocusedRegistration[]): string {
+function getSortedIPList(registrations: Registration[]): string {
     if (!registrations.length) {
         return "";
     } else {
@@ -165,9 +133,9 @@ export function pollVoipms(
     return Promise.all([
         getPreviousRegistration(documentClient, registrationStatusTableName, account),
         requestCurrentRegistrationStatus(user, password, account),
-    ]).then( (results: FocusedRegistrationStatus[]) => {
-        const previousStatus: FocusedRegistrationStatus = results[0];
-        const currentStatus: FocusedRegistrationStatus = results[1];
+    ]).then( (results: RegistrationStatus[]) => {
+        const previousStatus: RegistrationStatus = results[0];
+        const currentStatus: RegistrationStatus = results[1];
 
         let message: string = "";
 
@@ -177,12 +145,17 @@ export function pollVoipms(
         }
         const currentRegisteredIPs = getSortedIPList(currentStatus.registrations);
 
-        if (!previousStatus && currentStatus.registered) {
-            if (!currentStatus.registrations.length) {
-                throw new Error("Unexpected response: registered=true but registrations is empty");
-            }
+        if (!previousStatus) {
+            // This is the first time we've checked the status.
+            if (currentStatus.registered) {
+                if (!currentStatus.registrations.length) {
+                    throw new Error("Unexpected response: registered=true but registrations is empty");
+                }
 
-            message = "Newly registered at " + currentRegisteredIPs;
+                message = "Registered at " + currentRegisteredIPs;
+            } else {
+                message = "Not registered.";
+            }
         } else if (!currentStatus.registered) {
             message = "No longer registered.";
         } else if (previousRegisteredIPs !== currentRegisteredIPs) {
