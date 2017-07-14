@@ -35,7 +35,9 @@ function requestCurrentRegistrationStatus(
         "&api_password=" + password +
         "&method=getRegistrationStatus" +
         "&account=" + account;
-    return rpn(rpcURL);
+    return rpn(rpcURL).then((result: string) => {
+        return Promise.resolve(JSON.parse(result));
+    });
 }
 
 function getPreviousRegistration(
@@ -52,7 +54,7 @@ function getPreviousRegistration(
         return documentClient.get(requestParams).promise();
     }).then((dynamoResult: DocumentClient.GetItemOutput) => {
         if (dynamoResult.Item) {
-            return dynamoResult.Item.registrationStatus;
+            return Promise.resolve(dynamoResult.Item.registrationStatus);
         } else {
             return Promise.resolve(undefined);
         }
@@ -100,18 +102,12 @@ function publishChange(
 }
 
 function getSortedIPList(registrations: Registration[]): string {
-    if (!registrations.length) {
+    if (!registrations || !registrations.length) {
         return "";
     } else {
-        return registrations.sort((a, b) => {
-            if (a.register_ip < b.register_ip) {
-                return -1;
-            } else if (a.register_ip > b.register_ip) {
-                return 1;
-            } else {
-                return 0;
-            }
-        }).join(",");
+        return registrations.map((registration) => {
+            return registration.register_ip;
+        }).sort().join(",");
     }
 }
 
@@ -145,9 +141,14 @@ export function pollVoipms(
         }
         const currentRegisteredIPs = getSortedIPList(currentStatus.registrations);
 
-        if (!previousStatus) {
+        if (currentStatus.status !== "success") {
+            // Only report this eror if it's new.
+            if (!previousStatus || previousStatus.status !== currentStatus.status) {
+                message = "Error checking registration status: " + currentStatus.status;
+            }
+        } else if (!previousStatus) {
             // This is the first time we've checked the status.
-            if (currentStatus.registered) {
+            if (currentStatus.registered === "yes") {
                 if (!currentStatus.registrations.length) {
                     throw new Error("Unexpected response: registered=true but registrations is empty");
                 }
@@ -156,8 +157,12 @@ export function pollVoipms(
             } else {
                 message = "Not registered.";
             }
-        } else if (!currentStatus.registered) {
-            message = "No longer registered.";
+        } else if (previousStatus.registered !== currentStatus.registered) {
+            if (currentStatus.registered === "yes") {
+                message = "Now registered at " + currentRegisteredIPs;
+            } else {
+                message = "No longer registered.";
+            }
         } else if (previousRegisteredIPs !== currentRegisteredIPs) {
             message =
                 "IP Addresss changed.\n" +
