@@ -17,6 +17,17 @@ Resources:
       Path: "/"
       ManagedPolicyArns:
       - arn:aws:iam::aws:policy/AWSLambdaExecute
+      Policies:
+      - PolicyName: NoCreateLogGroups
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+          # Don't allow Lambda function to re-create its groups while CloudFormation is
+          # deleting the stack
+          - Effect: Deny
+            Action:
+            - logs:CreateLogGroup
+            Resource: arn:aws:logs:*:*:*
   GitHubStatusFunction:
     Type: AWS::Lambda::Function
     Properties:
@@ -33,9 +44,6 @@ Resources:
     Properties:
       LogGroupName:
         Fn::Sub: /aws/lambda/${GitHubStatusFunction}
-    DependsOn:
-    # Hopefully this will prevent the log group from being deleted before the lambda function
-    - GitHubStatusFunction
 Outputs:
   GitHubStatusFunctionArn:
     Value:
