@@ -27,19 +27,17 @@ Resources:
       Path: "/"
       ManagedPolicyArns:
         Ref: LambdaManagedPolicyArns
-      # Policies:
-      # - PolicyName: NoCreateLogGroups
-      #   PolicyDocument:
-      #     Version: "2012-10-17"
-      #     Statement:
+      Policies:
+      - PolicyName: NoCreateLogGroups
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
           # Don't allow Lambda function to re-create its groups while CloudFormation is
           # deleting the stack
-
-          # TODO: Is this really necessary?  Won't it work, since the custom resource depends on the log group?
-          # - Effect: Deny
-          #   Action:
-          #   - logs:CreateLogGroup
-          #   Resource: arn:aws:logs:*:*:*
+          - Effect: Deny
+            Action:
+            - logs:CreateLogGroup
+            Resource: arn:aws:logs:*:*:*
   CfnTestFunction:
     Type: AWS::Lambda::Function
     Properties:
@@ -68,7 +66,8 @@ Resources:
           - ","
           - Ref: TestParameters
     DependsOn:
-      CfnTestFunctionLogGroup
+    - LambdaExecutionRole
+    - CfnTestFunctionLogGroup
 # Outputs:
 #   CfnTestFunctionArn:
 #     Value:
