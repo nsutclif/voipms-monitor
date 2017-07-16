@@ -33,6 +33,9 @@ Resources:
     Properties:
       LogGroupName:
         Fn::Sub: /aws/lambda/${GitHubStatusFunction}
+    DependsOn:
+    # Hopefully this will prevent the log group from being deleted before the lambda function
+    - GitHubStatusFunction
 Outputs:
   GitHubStatusFunctionArn:
     Value:

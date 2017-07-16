@@ -58,6 +58,9 @@ Resources:
     Properties:
       LogGroupName:
         Fn::Sub: /aws/lambda/${CfnTestFunction}
+    DependsOn:
+    # Hopefully this will prevent the log group from being deleted before the lambda function
+    - CfnTestFunction
   BadPasswordTest:
     Type: Custom::Test
     Properties:

@@ -114,6 +114,9 @@ Resources:
     Properties:
       LogGroupName:
         Fn::Sub: /aws/lambda/${CollectorFunction}
+    DependsOn:
+    # Hopefully this will prevent the log group from being deleted before the lambda function
+    - CollectorFunction
   CountTable:
     Type: AWS::DynamoDB::Table
     Properties:
