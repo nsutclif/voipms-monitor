@@ -5,10 +5,6 @@ import {
     Context,
 } from "aws-lambda";
 import * as AWS from "aws-sdk";
-// import {
-//     ReceiveMessageRequest,
-//     ReceiveMessageResult,
-// } from "aws-sdk/clients/SQS";
 import * as SQS from "aws-sdk/clients/sqs";
 import {expect} from "chai";
 import * as rpn from "request-promise-native";
@@ -77,11 +73,22 @@ function runTest(testParameters: any): Promise<void> {
 
         // tslint:disable-next-line:no-unused-expression
         expect(result.Messages).to.exist;
+        expect(result.Messages).to.be.an("array");
+        expect(result.Messages.length).to.be.greaterThan(0);
+
+        const firstMessage = result.Messages[0];
+
+        expect(firstMessage.Body).to.be.a("string");
+        const snsNotification = JSON.parse(firstMessage.Body);
+
+        expect(snsNotification.Type).to.equal("Notification");
+        expect(snsNotification.Subject).to.equal("Voip.ms registration status change");
+        expect(snsNotification.Message).to.equal("Error checking registration status: invalid_credentials");
 
         return Promise.resolve();
     }).catch((error) => {
         console.log(JSON.stringify(error));
-        return Promise.reject(error);
+        return Promise.reject(error.errorMessage);
     });
 }
 
