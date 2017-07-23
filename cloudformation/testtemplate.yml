@@ -15,7 +15,7 @@ Resources:
   GitHubStatusCustomResourceStack:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: githubstatustemplate.yml
+      TemplateURL: githubstatus-shared-template.yml
   PendingStatus:
     Type: Custom::GitHubStatus
     Properties:
@@ -71,7 +71,7 @@ Resources:
   CfnTestStack:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: cfn-test-template.yml
+      TemplateURL: cfn-test-instance-template.yml
       Parameters:
         CodeS3Key: bad-password-test-lambda.ts.ts
         LambdaHandler: built/bad-password-test-lambda.handler
@@ -88,6 +88,22 @@ Resources:
           - ","
           - - arn:aws:iam::aws:policy/AWSLambdaExecute
             - Ref: BadPasswordTestPolicy
+  CfnTestSharedStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: cfn-test-shared-template.yml
+  TestReport:
+    Type: Custom::TestReport
+    Properties:
+      ServiceToken:
+        Fn::GetAtt: [CfnTestSharedStack, Outputs.CfnTestReportFunctionArn]
+
+# TODO
+
+      # S3Bucket: 
+      # S3Key: 
+      BadPasswordResults:
+        Fn::GetAtt: [CfnTestStack, Outputs.TestResult]
   CompleteStatus:
     Type: Custom::GitHubStatus
     Properties:

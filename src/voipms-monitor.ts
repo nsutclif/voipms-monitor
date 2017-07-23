@@ -123,7 +123,6 @@ export function pollVoipms(
         return Promise.reject("Must provide a user, password and account");
     }
 
-    console.log("Creating document client in region: " + region);
     const documentClient = new AWS.DynamoDB.DocumentClient({region});
 
     return Promise.all([

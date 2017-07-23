@@ -1,0 +1,12 @@
+Parameters:
+  TestSuiteSharedStackName:
+    Type: String
+  # GitHubStatusSharedStackName:
+  #   Type: String
+Resources:
+  TestSuite:
+    Type: Custom::Test
+    Properties:
+      ServiceToken:
+        Fn::GetAtt: [CfnTestFunction, Arn]
+      Parameters:
