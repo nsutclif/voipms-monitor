@@ -102,6 +102,8 @@ exports.handler = (event: CloudFormationCustomResourceEvent, context: Context, c
                 Body: testReport,
             };
 
+            console.log("s3 params: " + JSON.stringify(params));
+
             return s3.putObject(params).promise();
         } else {
             return Promise.resolve();

@@ -118,7 +118,7 @@ Resources:
     Properties:
       ServiceToken:
         Fn::GetAtt: [CfnTestSharedStack, Outputs.CfnTestReportFunctionArn]
-      S3Buket:
+      S3Bucket:
         Ref: S3Bucket
       S3Prefix:
         Ref: S3Prefix
