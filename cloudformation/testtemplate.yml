@@ -9,6 +9,10 @@ Parameters:
     NoEcho: true
   CommitHash:
     Type: String
+  S3Bucket:
+    Type: String
+  S3Prefix:
+    Type: String
 
 Resources:
   # Nested stacks cannot contain Transforms!  Can't use Serverless Application Model for nested stacks :-(
@@ -88,20 +92,36 @@ Resources:
           - ","
           - - arn:aws:iam::aws:policy/AWSLambdaExecute
             - Ref: BadPasswordTestPolicy
+  # Give the report writer access to S3
+  CfnReportPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        - Effect: Allow
+          Action:
+          - s3:PutObject
+          Resource:
+          - Fn::Sub: arn:aws:s3:::${S3Bucket}
+      ManagedPolicyName: 
+        Fn::Sub: ${AWS::StackName}-CfnReportPolicy
   CfnTestSharedStack:
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL: cfn-test-shared-template.yml
+      Parameters:
+        S3AccessPolicyArn:
+          Ref: CfnReportPolicy
   TestReport:
     Type: Custom::TestReport
     Properties:
       ServiceToken:
         Fn::GetAtt: [CfnTestSharedStack, Outputs.CfnTestReportFunctionArn]
-
-# TODO
-
-      # S3Bucket: 
-      # S3Key: 
+      S3Buket:
+        Ref: S3Bucket
+      S3Prefix:
+        Ref: S3Prefix
       BadPasswordResults:
         Fn::GetAtt: [CfnTestStack, Outputs.TestResult]
   CompleteStatus:

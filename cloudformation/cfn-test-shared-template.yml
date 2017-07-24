@@ -5,7 +5,10 @@ Description: Resources to support testing of stacks
 # TODO: connect outputs of test(s) to parameter of Test Report custom resource.
 # Write results to S3 bucket
 # Then connect outputs of test report to contitional create of github status (pass or fail)
-
+Parameters:
+  S3AccessPolicyArn:
+    Type: String
+    AllowedPattern: arn:aws:iam:.*
 
 Resources:
   LambdaExecutionRole:
@@ -23,6 +26,7 @@ Resources:
       Path: "/"
       ManagedPolicyArns:
       - arn:aws:iam::aws:policy/AWSLambdaExecute
+      - Ref: S3AccessPolicyArn
       Policies:
       - PolicyName: NoCreateLogGroups
         PolicyDocument:
