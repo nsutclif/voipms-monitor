@@ -5,6 +5,7 @@ import {
     Context,
 } from "aws-lambda";
 import * as AWS from "aws-sdk";
+import {PutObjectRequest} from "aws-sdk/clients/s3";
 import * as rpn from "request-promise-native";
 
 // tslint:disable-next-line:interface-over-type-literal
@@ -88,27 +89,20 @@ exports.handler = (event: CloudFormationCustomResourceEvent, context: Context, c
 
     Promise.resolve().then((): CloudFrontData => {
         if (event.RequestType === "Create") { // What to do on Update?
-            console.log(event.ResourceProperties.Parameters);
-            return Promise.resolve();
+            const s3Bucket: string = event.ResourceProperties.S3Bucket;
+            const s3Prefix: string = event.ResourceProperties.S3Prefix;
 
-            // const testParameters: any = parseParameters(event.ResourceProperties.Parameters);
+            const testReport = event.ResourceProperties.BadPasswordResults; // TODO!!
 
-            // return runTest(testParameters).then(() => {
-            //     console.log("Test Passed.");
-            //     return Promise.resolve({
-            //         result: {
-            //             outcome: "pass",
-            //         },
-            //     });
-            // }).catch((error) => {
-            //     console.log("Test Failed: " + JSON.stringify(error));
-            //     return Promise.resolve({
-            //         result: {
-            //             outcome: "fail",
-            //             error,
-            //         },
-            //     });
-            // });
+            const s3 = new AWS.S3();
+
+            const params: PutObjectRequest = {
+                Bucket: s3Bucket,
+                Key: [s3Prefix, "testresults.txt"].join("/"),
+                Body: testReport,
+            };
+
+            return s3.putObject(params).promise();
         } else {
             return Promise.resolve();
         }
