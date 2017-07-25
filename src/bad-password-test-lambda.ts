@@ -126,14 +126,14 @@ exports.handler = (event: CloudFormationCustomResourceEvent, context: Context, c
             return runTest(testParameters).then(() => {
                 console.log("Test Passed.");
                 return Promise.resolve({
-                    result: JSON.stringify({
+                    Result: JSON.stringify({
                         outcome: "pass",
                     }),
                 });
             }).catch((error) => {
                 console.log("Test Failed: " + JSON.stringify(error));
                 return Promise.resolve({
-                    result: JSON.stringify({
+                    Result: JSON.stringify({
                         outcome: "fail",
                         error,
                     }),

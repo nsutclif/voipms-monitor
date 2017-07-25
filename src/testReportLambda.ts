@@ -92,19 +92,50 @@ exports.handler = (event: CloudFormationCustomResourceEvent, context: Context, c
             const s3Bucket: string = event.ResourceProperties.S3Bucket;
             const s3Prefix: string = event.ResourceProperties.S3Prefix;
 
-            const testReport = event.ResourceProperties.BadPasswordResults; // TODO!!
+            // event.ResourceProperties contains all the test results and a few other random
+            // parameters.  Separate the test results in to a separate object.
+            const testReport = event.ResourceProperties;
+            delete(testReport.S3Bucket);
+            delete(testReport.S3Prefix);
+            delete(testReport.ServiceToken);
+
+            Object.keys(testReport).forEach((keyName) => {
+                testReport[keyName] = JSON.parse(testReport[keyName]);
+            });
+
+            const overallResult: boolean = Object.keys(testReport).find((keyName: string) => {
+                return (testReport[keyName] === "fail");
+            }) === undefined;
 
             const s3 = new AWS.S3();
 
             const params: PutObjectRequest = {
                 Bucket: s3Bucket,
                 Key: [s3Prefix, "testresults.txt"].join("/"),
-                Body: testReport,
+                Body: JSON.stringify(testReport, null, 2),
             };
 
             console.log("s3 params: " + JSON.stringify(params));
 
-            return s3.putObject(params).promise();
+            return s3.putObject(params).promise().then(() => {
+                // Return result in three forms:
+                // OverallResult: Pass/Fail
+                // State: success/failure (for GitHub notifications)
+                // Description
+                if (overallResult) {
+                    return Promise.resolve({
+                        OverallResult: "pass",
+                        State: "success",
+                        Description: "Tests passed!",
+                    });
+                } else {
+                    return Promise.resolve({
+                        OverallResult: "fail",
+                        State: "failure",
+                        Description: "Tests failed.",
+                    });
+                }
+            });
         } else {
             return Promise.resolve();
         }

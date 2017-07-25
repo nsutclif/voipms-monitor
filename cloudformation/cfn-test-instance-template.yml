@@ -71,7 +71,7 @@ Resources:
 Outputs:
   TestResult:
     Value:
-      Fn::GetAtt: [BadPasswordTest, result]
+      Fn::GetAtt: [BadPasswordTest, Result]
 #   CfnTestFunctionArn:
 #     Value:
 #       Fn::GetAtt: [CfnTestFunction, Arn]

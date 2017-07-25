@@ -139,6 +139,12 @@ Resources:
       Target_URL:
         Fn::Sub:
           https://console.aws.amazon.com/cloudformation/home?region=${AWS::Region}#/stack/detail?stackId=${AWS::StackId}
-      Description: "Functional tests passed!"
-      State: success
+      Description:
+        Fn::GetAtt: [TestReport, Description]
+      State:
+        Fn::GetAtt: [TestReport, State]
     DependsOn: BadPasswordStack
+Outputs:
+  TestResult:
+    Value:
+      Fn::GetAtt: [TestReport, OverallResult]
