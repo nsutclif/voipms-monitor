@@ -40,7 +40,7 @@
     "gulp-modify-file": "0.1.0",
     "gulp-s3-upload": "1.6.6",
     "gulp-zip": "4.0.0",
-    "js-yaml": "3.9.0",
+    "js-yaml": "3.9.1",
     "tslint": "5.5.0",
     "typescript": "2.4.2",
     "vinyl": "2.1.0"
