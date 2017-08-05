@@ -22,7 +22,7 @@
   },
   "homepage": "https://github.com/nsutclif/voipms-monitor#readme",
   "dependencies": {
-    "chai": "4.0.2",
+    "chai": "4.1.1",
     "request": "2.81.0",
     "request-promise-native": "1.0.4"
   },
