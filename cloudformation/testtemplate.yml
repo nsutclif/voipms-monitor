@@ -77,8 +77,8 @@ Resources:
     Properties:
       TemplateURL: cfn-test-instance-template.yml
       Parameters:
-        CodeS3Key: bad-password-test-lambda.ts.ts
-        LambdaHandler: built/bad-password-test-lambda.handler
+        CodeS3Key: testLambda.ts
+        LambdaHandler: built/badPasswordTestLambda.handler
         TestParameters:
           Fn::Join:
           - ","
@@ -93,6 +93,7 @@ Resources:
           - - arn:aws:iam::aws:policy/AWSLambdaExecute
             - Ref: BadPasswordTestPolicy
   # Give the report writer access to S3
+  # TODO: Just make it all buckets and put this in shared stack?
   CfnReportPolicy:
     Type: AWS::IAM::ManagedPolicy
     Properties:

@@ -5,8 +5,6 @@ import {
     Context,
 } from "aws-lambda";
 import * as AWS from "aws-sdk";
-import * as SQS from "aws-sdk/clients/sqs";
-import {expect} from "chai";
 import * as rpn from "request-promise-native";
 
 // tslint:disable-next-line:interface-over-type-literal
@@ -61,34 +59,34 @@ function sendCloudFrontResponse(
     });
 }
 
-function runTest(testParameters: any): Promise<void> {
-    const sqs: SQS = new AWS.SQS();
+// TODO: Type return value
+function invokeTest(testName: string, functionName: string, testParameters: any): Promise<any> {
+    const lambda = new AWS.Lambda();
 
-    const requestOptions: SQS.ReceiveMessageRequest = {
-        QueueUrl: testParameters.ResultsSQSQueueURL,
-        MaxNumberOfMessages: 10,
+    const invokeParams: AWS.Lambda.Types.InvocationRequest = {
+        FunctionName: functionName,
+        Payload: JSON.stringify(testParameters),
     };
 
-    console.log("receiveMessage request: " + JSON.stringify(requestOptions));
+    console.log("invokeParams: " + JSON.stringify(invokeParams));
 
-    return sqs.receiveMessage(requestOptions).promise().then((result: SQS.ReceiveMessageResult) => {
-        console.log("receiveMessage result: " + JSON.stringify(result));
+    return lambda.invoke(invokeParams).promise().then((response: AWS.Lambda.InvocationResponse) => {
+        console.log("invoke Response: " + JSON.stringify(response));
 
-        // tslint:disable-next-line:no-unused-expression
-        expect(result.Messages).to.exist;
-        expect(result.Messages).to.be.an("array");
-        expect(result.Messages.length).to.be.greaterThan(0);
-
-        const firstMessage = result.Messages[0];
-
-        expect(firstMessage.Body).to.be.a("string");
-        const snsNotification = JSON.parse(firstMessage.Body);
-
-        expect(snsNotification.Type).to.equal("Notification");
-        expect(snsNotification.Subject).to.equal("Voip.ms registration status change");
-        expect(snsNotification.Message).to.equal("Error checking registration status: invalid_credentials");
-
-        return Promise.resolve();
+        // When the function returns an error, response.FunctionError==="Handled"
+        if (response.FunctionError) {
+            return Promise.resolve({
+                testName,
+                outcome: "fail",
+                detail: response.Payload,
+            });
+        } else {
+            return Promise.resolve({
+                testName,
+                outcome: "pass",
+                detail: response.Payload,
+            });
+        }
     });
 }
 
@@ -123,28 +121,16 @@ exports.handler = (event: CloudFormationCustomResourceEvent, context: Context, c
         if (event.RequestType === "Create") { // What to do on Update?
             const testParameters: any = parseParameters(event.ResourceProperties.Parameters);
 
-            return runTest(testParameters).then(() => {
-                console.log("Test Passed.");
-                return Promise.resolve({
-                    Result: JSON.stringify({
-                        outcome: "pass",
-                    }),
-                });
-            }).catch((error) => {
-                console.log("Test Failed: " + JSON.stringify(error));
-                return Promise.resolve({
-                    Result: JSON.stringify({
-                        outcome: "fail",
-                        error,
-                    }),
-                });
-            });
+            const testFunctionName: string = event.ResourceProperties.Function;
+
+            return invokeTest(event.LogicalResourceId, testFunctionName, testParameters);
         } else {
             return Promise.resolve();
         }
-    }).then((cloudFrontData: CloudFrontData) => {
+    }).then((result: any) => { // TODO: Typedef!
         // TODO: Physical Resource ID
-        return sendCloudFrontResponse(event, "SUCCESS", "asdf", "", cloudFrontData).then(() => {
+        const resultObject: CloudFrontData = {Result: JSON.stringify(result)};
+        return sendCloudFrontResponse(event, "SUCCESS", "asdf", "", resultObject).then(() => {
             callback();
         });
     }).catch((error) => {

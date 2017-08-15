@@ -104,7 +104,7 @@ exports.handler = (event: CloudFormationCustomResourceEvent, context: Context, c
             });
 
             const overallResult: boolean = Object.keys(testReport).find((keyName: string) => {
-                return (testReport[keyName] === "fail");
+                return (testReport[keyName].outcome === "fail");
             }) === undefined;
 
             const s3 = new AWS.S3();
