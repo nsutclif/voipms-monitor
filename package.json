@@ -27,7 +27,7 @@
     "request-promise-native": "1.0.4"
   },
   "devDependencies": {
-    "@types/chai": "4.0.3",
+    "@types/chai": "4.0.4",
     "@types/aws-lambda": "0.0.16",
     "@types/gulp": "^4.0.4",
     "@types/js-yaml": "3.9.1",
