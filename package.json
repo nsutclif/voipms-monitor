@@ -33,7 +33,7 @@
     "@types/js-yaml": "3.9.1",
     "@types/node": "7.0.29",
     "@types/request": "2.0.3",
-    "@types/request-promise-native": "1.0.5",
+    "@types/request-promise-native": "1.0.7",
     "@types/vinyl": "2.0.1",
     "aws-sdk": "2.124.0",
     "gulp": "3.9.1",
@@ -42,7 +42,7 @@
     "gulp-zip": "4.0.0",
     "js-yaml": "3.10.0",
     "tslint": "5.7.0",
-    "typescript": "2.5.2",
+    "typescript": "2.5.3",
     "vinyl": "2.1.0"
   },
   "greenkeeper": {
