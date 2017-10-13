@@ -1,6 +1,10 @@
 AWSTemplateFormatVersion : '2010-09-09'
 Description: A serverless application for monitoring Voip.ms registration status
 Parameters:
+  StackTemplateBucketName:
+    Type: String
+  StackTemplateBucketKeyPrefix:
+    Type: String
   VoipMSUser:
     Type: String
     Default: ""
@@ -58,8 +62,10 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       Code:
-        S3Bucket: fillinlater
-        S3Key: githubStatusLambda.zip
+        S3Bucket:
+          Ref: StackTemplateBucketName
+        S3Key:
+          Fn::Sub: ${StackTemplateBucketKeyPrefix}/githubStatusLambda.zip
       Handler: built/index.handler
       Runtime: nodejs6.10
       Environment:
