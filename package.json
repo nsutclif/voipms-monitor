@@ -32,7 +32,7 @@
     "@types/gulp": "^4.0.4",
     "@types/js-yaml": "3.9.1",
     "@types/node": "7.0.29",
-    "@types/request": "2.0.4",
+    "@types/request": "2.0.5",
     "@types/request-promise-native": "1.0.7",
     "@types/vinyl": "2.0.1",
     "aws-sdk": "2.133.0",
