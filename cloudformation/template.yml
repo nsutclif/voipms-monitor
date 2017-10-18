@@ -23,7 +23,10 @@ Parameters:
     MinValue: 2 # 1 doesn't work with Schedule expression as is
 Conditions:
   CreateSubscription:
-    Fn::Not: [Fn::Equals: [Ref: NotificationEmail, '']]
+    Fn::Not:
+    - Fn::Equals:
+      - Ref: NotificationEmail
+      - ''
 Resources:
   PollFunctionLambdaExecutionRole:
     Type: AWS::IAM::Role
