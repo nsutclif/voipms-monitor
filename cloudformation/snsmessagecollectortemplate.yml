@@ -21,9 +21,14 @@ Parameters:
 
 Conditions:
   CreateTimeoutEvent:
-    Fn::Not: [Fn::Equals: [Ref: MaximumMinutesToWait, 0]]
+    Fn::Not:
+    - Fn::Equals:
+      - Ref: MaximumMinutesToWait
+      - 0
   OneMinuteTimeout:
-    Fn::Equals: [Ref: MaximumMinutesToWait, 1]
+    Fn::Equals:
+    - Ref: MaximumMinutesToWait
+    - 1
 
 Resources:
   # Capture the SNS messages in this SQS queue:
@@ -100,7 +105,7 @@ Resources:
         S3Bucket:
           Ref: StackTemplateBucketName
         S3Key:
-          Fn::Sub: ${StackTemplateBucketKeyPrefix}/snsCollectorLambda.ts
+          Fn::Sub: ${StackTemplateBucketKeyPrefix}/PollVoipMSFunction.zip # TODO: Separate?
       Environment:
         Variables:
           # Tell the Lambda function which table to use:
@@ -167,7 +172,10 @@ Resources:
     Properties:
       ScheduleExpression:
         # Need to say "1 minute" (singular) or "2 minutes" (plural)
-        Fn::If: [OneMinuteTimeout, rate(1 minute), Fn::Sub: "rate(${MaximumMinutesToWait} minutes)"]
+        Fn::If:
+        - OneMinuteTimeout
+        - rate(1 minute)
+        - Fn::Sub: "rate(${MaximumMinutesToWait} minutes)"
       Targets:
       - Id: PollLambdaTarget
         Arn:

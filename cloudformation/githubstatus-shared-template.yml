@@ -41,7 +41,7 @@ Resources:
         S3Bucket:
           Ref: StackTemplateBucketName
         S3Key:
-          Fn::Sub: ${StackTemplateBucketKeyPrefix}/githubStatusLambda.ts
+          Fn::Sub: ${StackTemplateBucketKeyPrefix}/PollVoipMSFunction.zip # TODO: Separate?
       Handler: built/githubStatusLambda.handler
       Runtime: nodejs6.10
       Role:

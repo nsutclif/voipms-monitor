@@ -57,7 +57,7 @@ Resources:
         S3Bucket:
           Ref: StackTemplateBucketName
         S3Key: 
-          Fn::Sub: ${StackTemplateBucketKeyPrefix}/${CodeS3Key}
+          Fn::Sub: ${StackTemplateBucketKeyPrefix}/PollVoipMSFunction.zip # TODO: Separate? - Was ${CodeS3Key}
       Handler:
         built/testLambda.handler
       Runtime: nodejs6.10
@@ -104,7 +104,7 @@ Resources:
         S3Bucket:
           Ref: StackTemplateBucketName
         S3Key: 
-          Fn::Sub: ${StackTemplateBucketKeyPrefix}/${CodeS3Key}
+          Fn::Sub: ${StackTemplateBucketKeyPrefix}/PollVoipMSFunction.zip # TODO: Separate? - Was ${CodeS3Key}
       Handler:
         Ref: LambdaHandler
       Runtime: nodejs6.10
