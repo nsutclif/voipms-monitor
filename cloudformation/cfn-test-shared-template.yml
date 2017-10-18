@@ -6,6 +6,10 @@ Description: Resources to support testing of stacks
 # Write results to S3 bucket
 # Then connect outputs of test report to contitional create of github status (pass or fail)
 Parameters:
+  StackTemplateBucketName:
+    Type: String
+  StackTemplateBucketKeyPrefix:
+    Type: String
   S3AccessPolicyArn:
     Type: String
     AllowedPattern: arn:aws:iam:.*
@@ -42,9 +46,10 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       Code:
-        S3Bucket: fillinlater
+        S3Bucket:
+          Ref: StackTemplateBucketName
         S3Key: 
-          Ref: CodeS3Key
+          Fn::Sub: ${StackTemplateBucketKeyPrefix}/PollVoipMSFunction.zip # TODO: Separate? - Was ${CodeS3Key}
       Handler: built/testReportLambda.handler
       Runtime: nodejs6.10
       Role:

@@ -2,6 +2,10 @@ AWSTemplateFormatVersion : "2010-09-09"
 Description: A CloudFormation custom resource that runs a test
 
 Parameters:
+  StackTemplateBucketName:
+    Type: String
+  StackTemplateBucketKeyPrefix:
+    Type: String
   TestParameters: # Should these be passed in to the Lambda or to the Custom::Test?
     Type: CommaDelimitedList
   CodeS3Key:
@@ -50,9 +54,10 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       Code:
-        S3Bucket: fillinlater
+        S3Bucket:
+          Ref: StackTemplateBucketName
         S3Key: 
-          Ref: CodeS3Key
+          Fn::Sub: ${StackTemplateBucketKeyPrefix}/PollVoipMSFunction.zip # TODO: Separate? - Was ${CodeS3Key}
       Handler:
         built/testLambda.handler
       Runtime: nodejs6.10
@@ -96,9 +101,10 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       Code:
-        S3Bucket: fillinlater
+        S3Bucket:
+          Ref: StackTemplateBucketName
         S3Key: 
-          Ref: CodeS3Key
+          Fn::Sub: ${StackTemplateBucketKeyPrefix}/PollVoipMSFunction.zip # TODO: Separate? - Was ${CodeS3Key}
       Handler:
         Ref: LambdaHandler
       Runtime: nodejs6.10

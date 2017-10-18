@@ -4,6 +4,10 @@ Description: >
   The stack won't finish creating until the specified number of SNS messages arrive.
 
 Parameters:
+  StackTemplateBucketName:
+    Type: String
+  StackTemplateBucketKeyPrefix:
+    Type: String
   SNSTopicArn:
     Type: String
     AllowedPattern: arn:aws:sns:.*
@@ -17,9 +21,14 @@ Parameters:
 
 Conditions:
   CreateTimeoutEvent:
-    Fn::Not: [Fn::Equals: [Ref: MaximumMinutesToWait, 0]]
+    Fn::Not:
+    - Fn::Equals:
+      - Ref: MaximumMinutesToWait
+      - 0
   OneMinuteTimeout:
-    Fn::Equals: [Ref: MaximumMinutesToWait, 1]
+    Fn::Equals:
+    - Ref: MaximumMinutesToWait
+    - 1
 
 Resources:
   # Capture the SNS messages in this SQS queue:
@@ -93,8 +102,10 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       Code:
-        S3Bucket: fillinlater
-        S3Key: snsCollectorLambda.ts
+        S3Bucket:
+          Ref: StackTemplateBucketName
+        S3Key:
+          Fn::Sub: ${StackTemplateBucketKeyPrefix}/PollVoipMSFunction.zip # TODO: Separate?
       Environment:
         Variables:
           # Tell the Lambda function which table to use:
@@ -161,7 +172,10 @@ Resources:
     Properties:
       ScheduleExpression:
         # Need to say "1 minute" (singular) or "2 minutes" (plural)
-        Fn::If: [OneMinuteTimeout, rate(1 minute), Fn::Sub: "rate(${MaximumMinutesToWait} minutes)"]
+        Fn::If:
+        - OneMinuteTimeout
+        - rate(1 minute)
+        - Fn::Sub: "rate(${MaximumMinutesToWait} minutes)"
       Targets:
       - Id: PollLambdaTarget
         Arn:

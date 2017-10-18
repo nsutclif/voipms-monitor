@@ -2,6 +2,10 @@ AWSTemplateFormatVersion : "2010-09-09"
 Description: An experimental test harness for voipms-monitor
 
 Parameters:
+  StackTemplateBucketName:
+    Type: String
+  StackTemplateBucketKeyPrefix:
+    Type: String
   Repo:
     Type: String
   GitHubToken:
@@ -9,17 +13,19 @@ Parameters:
     NoEcho: true
   CommitHash:
     Type: String
-  S3Bucket:
-    Type: String
-  S3Prefix:
-    Type: String
 
 Resources:
   # Nested stacks cannot contain Transforms!  Can't use Serverless Application Model for nested stacks :-(
   GitHubStatusCustomResourceStack:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: githubstatus-shared-template.yml
+      Parameters:
+        StackTemplateBucketName:
+          Ref: StackTemplateBucketName
+        StackTemplateBucketKeyPrefix:
+          Ref: StackTemplateBucketKeyPrefix
+      TemplateURL:
+        Fn::Sub: https://s3.${AWS::URLSuffix}/${StackTemplateBucketName}/${StackTemplateBucketKeyPrefix}/githubstatus-shared-template.yml
   PendingStatus:
     Type: Custom::GitHubStatus
     Properties:
@@ -42,21 +48,31 @@ Resources:
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
+        StackTemplateBucketName:
+          Ref: StackTemplateBucketName
+        StackTemplateBucketKeyPrefix:
+          Ref: StackTemplateBucketKeyPrefix
         IntervalMinutes: 3
         NotificationEmail: ""
         VoipMSAccount: "test"
         VoipMSPassword: "test"
         VoipMSUser: "test"
-      TemplateURL: template.yml
+      TemplateURL:
+        Fn::Sub: https://s3.${AWS::URLSuffix}/${StackTemplateBucketName}/${StackTemplateBucketKeyPrefix}/template.yml
   SNSMessageCollectorStack:
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
+        StackTemplateBucketName:
+          Ref: StackTemplateBucketName
+        StackTemplateBucketKeyPrefix:
+          Ref: StackTemplateBucketKeyPrefix
         SNSTopicArn:
           Fn::GetAtt: [BadPasswordStack, Outputs.RegistrationStatusChangeTopicArn]
         MinimumMessagesToCollect: 1
         MaximumMinutesToWait: 5
-      TemplateURL: snsmessagecollectortemplate.yml
+      TemplateURL:
+        Fn::Sub: https://s3.${AWS::URLSuffix}/${StackTemplateBucketName}/${StackTemplateBucketKeyPrefix}/snsmessagecollectortemplate.yml
   BadPasswordTestPolicy:
     Type: AWS::IAM::ManagedPolicy
     Properties:
@@ -75,8 +91,13 @@ Resources:
   CfnTestStack:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: cfn-test-instance-template.yml
+      TemplateURL:
+        Fn::Sub: https://s3.${AWS::URLSuffix}/${StackTemplateBucketName}/${StackTemplateBucketKeyPrefix}/cfn-test-instance-template.yml
       Parameters:
+        StackTemplateBucketName:
+          Ref: StackTemplateBucketName
+        StackTemplateBucketKeyPrefix:
+          Ref: StackTemplateBucketKeyPrefix
         CodeS3Key: testLambda.ts
         LambdaHandler: built/badPasswordTestLambda.handler
         TestParameters:
@@ -104,14 +125,19 @@ Resources:
           Action:
           - s3:PutObject
           Resource:
-          - Fn::Sub: arn:aws:s3:::${S3Bucket}
+          - Fn::Sub: arn:aws:s3:::${StackTemplateBucketName}
       ManagedPolicyName: 
         Fn::Sub: ${AWS::StackName}-CfnReportPolicy
   CfnTestSharedStack:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: cfn-test-shared-template.yml
+      TemplateURL:
+        Fn::Sub: https://s3.${AWS::URLSuffix}/${StackTemplateBucketName}/${StackTemplateBucketKeyPrefix}/cfn-test-shared-template.yml
       Parameters:
+        StackTemplateBucketName:
+          Ref: StackTemplateBucketName
+        StackTemplateBucketKeyPrefix:
+          Ref: StackTemplateBucketKeyPrefix
         S3AccessPolicyArn:
           Ref: CfnReportPolicy
   TestReport:
@@ -120,9 +146,9 @@ Resources:
       ServiceToken:
         Fn::GetAtt: [CfnTestSharedStack, Outputs.CfnTestReportFunctionArn]
       S3Bucket:
-        Ref: S3Bucket
+        Ref: StackTemplateBucketName
       S3Prefix:
-        Ref: S3Prefix
+        Ref: StackTemplateBucketKeyPrefix
       BadPasswordResults:
         Fn::GetAtt: [CfnTestStack, Outputs.TestResult]
   CompleteStatus:
