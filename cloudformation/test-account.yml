@@ -1,0 +1,110 @@
+AWSTemplateFormatVersion : "2010-09-09"
+Description: A CloudFormation custom resource that defines the persistent resources in the testing account
+
+Parameters:
+  ParentAccountID:
+    Type: String
+    Description: Account ID of the AWS account to grant cross-account access from
+  InputBucketName:
+    Type: String
+    Description: Name of the bucket that will build artifacts will be copied to for testing
+
+Resources:
+  StackDeployPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName:
+        Fn::Sub: ${AWS::StackName}-stack-deploy-policy
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        - Effect: Allow
+          Action:
+          - cloudformation:CreateStack
+          - dynamodb:CreateTable
+          - dynamodb:DescribeTable
+          - dynamodb:ListTagsOfResource
+          - dynamodb:TagResource
+          - events:DescribeRule
+          - events:PutRule
+          - events:PutTargets
+          - iam:AttachRolePolicy
+          - iam:CreatePolicy
+          - iam:CreateRole
+          - iam:GetPolicy # could be tightened?
+          - iam:GetRole
+          - iam:PassRole
+          - iam:PutRolePolicy
+          - lambda:AddPermission
+          - lambda:CreateFunction
+          - lambda:GetFunctionConfiguration
+          - lambda:InvokeFunction
+          - lambda:ListTags
+          - lambda:TagResource
+          - logs:CreateLogGroup
+          - logs:DescribeLogGroups
+          - sns:GetTopicAttributes
+          - sns:CreateTopic
+          - sns:Subscribe
+          - sqs:CreateQueue
+          - sqs:GetQueueAttributes
+          - sqs:SetQueueAttributes
+          Resource: "*"
+        # Allow access to the bucket that the templates are stored in:
+        - Effect: Allow
+          Action:
+          - s3:GetObject
+          Resource:
+            Fn::Join:
+            - ""
+            - - Fn::GetAtt: [InputBucket, Arn]
+              - "/*"
+  StackDeployRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        - Effect: Allow
+          Principal:
+            AWS:
+              Fn::Sub: arn:aws:iam::${ParentAccountID}:root
+          Action: sts:AssumeRole
+      ManagedPolicyArns:
+      - Ref: StackDeployPolicy
+      RoleName:
+        Fn::Sub: ${AWS::StackName}-stack-deploy-role
+  InputBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName:
+        Ref: InputBucketName
+  # Allow the parent account to access the input bucket:
+  InputBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket:
+        Ref: InputBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        - Effect: Allow
+          Action:
+          - s3:PutObject
+          - s3:DeleteObject
+          Resource:
+            Fn::Join:
+            - ""
+            - - Fn::GetAtt: [InputBucket, Arn]
+              - "/*"
+          Principal:
+            AWS:
+              Fn::Sub: arn:aws:iam::${ParentAccountID}:root
+        - Effect: Allow
+          Action:
+          - s3:ListBucket
+          Resource:
+            Fn::GetAtt: [InputBucket, Arn]
+          Principal:
+            AWS:
+              Fn::Sub: arn:aws:iam::${ParentAccountID}:root
