@@ -92,6 +92,8 @@ function copyBuildToTestAccount(): Promise<void> {
                 ACL: "bucket-owner-full-control",
             };
 
+            console.log("Attempting to copy: " + JSON.stringify(copyParams));
+
             return s3.copyObject(copyParams).promise();
         }));
     }).then(() => {
@@ -176,6 +178,9 @@ function deployBuildInTestAccount(): Promise<void> {
                 },
             );
         }
+
+        console.log("Attempting to create stack: " + JSON.stringify(createStackParams));
+
         return cf.createStack(createStackParams).promise();
     }).then(() => {
         return;
