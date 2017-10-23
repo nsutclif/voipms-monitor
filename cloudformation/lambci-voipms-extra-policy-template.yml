@@ -10,6 +10,8 @@ Parameters:
   TestAccountStackName:
     Type: String
     Description: Name of the account stack in the automated testing sandbox AWS account
+  TestAccountInputBucketName:
+    Type: String
 
 Resources:
   AssumeTestAccountRolePolicy:
@@ -22,7 +24,27 @@ Resources:
           Action:
           - sts:AssumeRole
           Resource:
-            Fn::Sub: arn:aws:iam::${TestAccountStackName}:role/${TestAccountID}-stack-deploy-role
+            Fn::Sub: arn:aws:iam::${TestAccountID}:role/${TestAccountStackName}-stack-deploy-role
+      Roles:
+      - Fn::ImportValue:
+          Fn::Sub: "${LambciStackName}-LambdaExecution"
+  CopyToTestAccountS3Policy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        - Effect: Allow
+          Action:
+          - s3:PutObject
+          - s3:DeleteObject
+          Resource:
+            Fn::Sub: arn:aws:s3:::${TestAccountInputBucketName}/*
+        - Effect: Allow
+          Action:
+          - s3:ListBucket
+          Resource:
+            Fn::Sub: arn:aws:s3:::${TestAccountInputBucketName}
       Roles:
       - Fn::ImportValue:
           Fn::Sub: "${LambciStackName}-LambdaExecution"

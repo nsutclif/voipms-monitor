@@ -103,6 +103,9 @@ Resources:
         - Effect: Allow
           Action:
           - s3:ListBucket
+          # Is GetBucketLocation really needed?
+          # console.aws.amazon.com/cloudwatch/home?region=us-east-1#logEventViewer:group=/aws/lambda/update-custom-domain-lambda
+          - s3:GetBucketLocation
           Resource:
             Fn::GetAtt: [InputBucket, Arn]
           Principal:
