@@ -3,7 +3,7 @@ Description: A CloudFormation custom resource that defines the persistent resour
 
 Parameters:
   ParentAccountID:
-    Type: String
+    Type: Number
     Description: Account ID of the AWS account to grant cross-account access from
   InputBucketName:
     Type: String

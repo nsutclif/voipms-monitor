@@ -1,0 +1,28 @@
+AWSTemplateFormatVersion : "2010-09-09"
+Description: An extra managed policy for the Lambci Lambda Execution Role to allow it to assume the role in the test account
+
+Parameters:
+  LambciStackName:
+    Type: String
+  TestAccountID:
+    Type: Number
+    Description: Account ID of the automated testing sandbox AWS account
+  TestAccountStackName:
+    Type: String
+    Description: Name of the account stack in the automated testing sandbox AWS account
+
+Resources:
+  AssumeTestAccountRolePolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        - Effect: Allow
+          Action:
+          - sts:AssumeRole
+          Resource:
+            Fn::Sub: arn:aws:iam::${TestAccountStackName}:role/${TestAccountID}-stack-deploy-role
+      Roles:
+      - Fn::ImportValue:
+          Fn::Sub: "${LambciStackName}-LambdaExecution"
