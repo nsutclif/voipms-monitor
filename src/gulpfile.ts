@@ -79,6 +79,8 @@ function copyBuildToTestAccount(): Promise<void> {
         Prefix: prependKeyPrefix(""),
     };
 
+    console.log("Attempting to list objects: " + JSON.stringify(listParams));
+
     return s3.listObjectsV2(listParams).promise().then((output: ListObjectsV2Output) => {
         // tslint:disable-next-line:ban-types
         return Promise.all(output.Contents.map((content: Object) => {
