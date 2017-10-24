@@ -196,6 +196,13 @@ gulp.task("deploytest", (done) => {
     }).then(() => {
         done();
     }).catch((error) => {
-        done(error);
+        let errorMessage: string;
+        // if Error is of type AWSError, the useful part will be in the message property:
+        if (error.message) {
+            errorMessage = error.message;
+        } else {
+            errorMessage = error;
+        }
+        done(errorMessage);
     });
 });
