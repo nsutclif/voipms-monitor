@@ -203,6 +203,7 @@ gulp.task("deploytest", (done) => {
         } else {
             errorMessage = error;
         }
+        console.log(error);
         done(errorMessage);
     });
 });
