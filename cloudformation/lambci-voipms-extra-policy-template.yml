@@ -48,3 +48,22 @@ Resources:
       Roles:
       - Fn::ImportValue:
           Fn::Sub: "${LambciStackName}-LambdaExecution"
+  # Allow build artifacts to be copied across:
+  CopyFromOutputS3Policy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        - Effect: Allow
+          Action:
+          - s3:ListBucket
+          Resource:
+            Fn::Join:
+            - ""
+            - - "arn:aws:s3:::"
+              - Fn::ImportValue:
+                  Fn::Sub: "${LambciStackName}-S3Bucket"
+      Roles:
+      - Fn::ImportValue:
+          Fn::Sub: "${LambciStackName}-LambdaExecution"
