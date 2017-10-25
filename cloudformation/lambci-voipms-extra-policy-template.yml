@@ -60,21 +60,12 @@ Resources:
         - Effect: Allow
           Action:
           - s3:ListBucket
-          - s3:* # TODO REMOVE **********************************
           Resource:
           - Fn::Join:
             - ""
             - - "arn:aws:s3:::"
               - Fn::ImportValue:
                   Fn::Sub: "${LambciStackName}-S3Bucket"
-
-# TODO REMOVE **********************************
-          - Fn::Join:
-            - ""
-            - - "arn:aws:s3:::"
-              - Fn::ImportValue:
-                  Fn::Sub: "${LambciStackName}-S3Bucket"
-              - "/*"
       Roles:
       - Fn::ImportValue:
           Fn::Sub: "${LambciStackName}-LambdaExecution"
