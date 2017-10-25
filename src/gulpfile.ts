@@ -172,7 +172,7 @@ function deployBuildInTestAccount(): Promise<void> {
                 },
             );
         }
-        if (process.env.LAMBCI_BRANCH) {
+        if (process.env.LAMBCI_PULL_REQUEST) {
             createStackParams.Tags.push(
                 {
                     Key: "PULL_REQUEST",
