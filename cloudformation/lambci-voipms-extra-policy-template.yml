@@ -38,11 +38,13 @@ Resources:
           Action:
           - s3:PutObject
           - s3:DeleteObject
+          - s3:* # TODO ****************
           Resource:
             Fn::Sub: arn:aws:s3:::${TestAccountInputBucketName}/*
         - Effect: Allow
           Action:
           - s3:ListBucket
+          - s3:* # TODO ****************
           Resource:
             Fn::Sub: arn:aws:s3:::${TestAccountInputBucketName}
       Roles:
@@ -58,13 +60,15 @@ Resources:
         - Effect: Allow
           Action:
           - s3:ListBucket
-          - s3:*
+          - s3:* # TODO REMOVE **********************************
           Resource:
           - Fn::Join:
             - ""
             - - "arn:aws:s3:::"
               - Fn::ImportValue:
                   Fn::Sub: "${LambciStackName}-S3Bucket"
+
+# TODO REMOVE **********************************
           - Fn::Join:
             - ""
             - - "arn:aws:s3:::"
