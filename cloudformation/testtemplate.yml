@@ -13,6 +13,15 @@ Parameters:
     NoEcho: true
   CommitHash:
     Type: String
+  SelfDestructTime:
+    Type: String
+
+Conditions:
+  CreateSelfDestruct:
+    Fn::Not:
+    - Fn::Equals:
+      - Ref: SelfDestructTime
+      - ''
 
 Resources:
   # Nested stacks cannot contain Transforms!  Can't use Serverless Application Model for nested stacks :-(
@@ -171,6 +180,87 @@ Resources:
       State:
         Fn::GetAtt: [TestReport, State]
     DependsOn: BadPasswordStack
+  SelfDestructLambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Condition: CreateSelfDestruct
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/AWSLambdaExecute
+      Policies:
+      - PolicyName: NoCreateLogGroups
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+          # Don't allow Lambda function to re-create its groups while CloudFormation is
+          # deleting the stack
+          - Effect: Deny
+            Action:
+            - logs:CreateLogGroup
+            Resource: arn:aws:logs:*:*:*
+      - PolicyName: DeleteStack
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - cloudformation:DeleteStack
+                - dynamodb:DeleteTable
+                - iam:DeletePolicy
+                - iam:DeleteRole
+                - lambda:DeleteFunction
+                - logs:DeleteLogGroup
+                - sns:DeleteTopic
+                - sqs:DeleteQueue
+              Resource:
+                "*" # TODO: Improve
+  SelfDestructLambda:
+    Type: AWS::Lambda::Function
+    Condition: CreateSelfDestruct
+    Properties:
+      Code:
+        S3Bucket:
+          Ref: StackTemplateBucketName
+        S3Key:
+          Fn::Sub: ${StackTemplateBucketKeyPrefix}/PollVoipMSFunction.zip # TODO: Separate?
+      Handler: built/selfDestructLambda.handler
+      Runtime: nodejs6.10
+      Role:
+        Fn::GetAtt: [SelfDestructLambdaExecutionRole, Arn]
+  # Create a log group for the Lambda function so that it gets deleted when the stack is deleted.
+  SelfDestructLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName:
+        Fn::Sub: /aws/lambda/${SelfDestructLambda}
+  SelfDestructEvent:
+    Type: AWS::Events::Rule
+    Condition: CreateSelfDestruct
+    Properties:
+      ScheduleExpression: SelfDestructTime
+      Targets:
+      - Id: PollLambdaTarget
+        Arn:
+          Fn::GetAtt: [CollectorFunction, Arn]
+  # Allow Cloudwatch Event to trigger Lambda:
+  SelfDestructEventPermission:
+    Type: AWS::Lambda::Permission
+    Condition: CreateSelfDestruct
+    Properties:
+      FunctionName:
+        Fn::GetAtt: [SelfDestructLambda, Arn]
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn:
+        Fn::GetAtt: [SelfDestructEvent, Arn]
 Outputs:
   TestResult:
     Value:
