@@ -216,7 +216,9 @@ Resources:
                 - dynamodb:DeleteTable
                 - iam:DeletePolicy
                 - iam:DeleteRole
+                - iam:DetachRolePolicy
                 - lambda:DeleteFunction
+                - lambda:InvokeFunction # for executing custom resources
                 - logs:DeleteLogGroup
                 - sns:DeleteTopic
                 - sqs:DeleteQueue
@@ -235,6 +237,11 @@ Resources:
       Runtime: nodejs6.10
       Role:
         Fn::GetAtt: [SelfDestructLambdaExecutionRole, Arn]
+      Environment:
+        Variables:
+          # Tell the Lambda function which table to use:
+          STACK_ID:
+            Ref: AWS::StackId
   # Create a log group for the Lambda function so that it gets deleted when the stack is deleted.
   SelfDestructLambdaLogGroup:
     Type: AWS::Logs::LogGroup
