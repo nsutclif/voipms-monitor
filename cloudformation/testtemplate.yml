@@ -214,11 +214,13 @@ Resources:
               Action:
                 - cloudformation:DeleteStack
                 - dynamodb:DeleteTable
+                - events:DeleteRule # arn:aws:events:us-east-1:729398747886:rule/voipms-test-632-SelfDestructEvent-11QAJ5RX1J5AZ
                 - events:RemoveTargets # arn:aws:events:us-east-1:729398747886:rule/voipms-test-630-SelfDestructEvent-D3ZI90HEZKN
                 - iam:DeletePolicy
                 - iam:DeleteRole
                 - iam:DeleteRolePolicy
                 - iam:DetachRolePolicy
+                - iam:ListPolicyVersions # arn:aws:iam::729398747886:policy/voipms-test-632-CfnReportPolicy
                 - iam:GetPolicy # arn:aws:iam::729398747886:policy/voipms-test-630-BadPasswordTestPolicy
                 - lambda:DeleteFunction
                 - lambda:InvokeFunction # for executing custom resources
