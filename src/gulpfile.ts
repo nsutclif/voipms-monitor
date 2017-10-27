@@ -122,7 +122,18 @@ function deployBuildInTestAccount(): Promise<void> {
 
         const deleteTime: Date = new Date();
         deleteTime.setTime(deleteTime.getTime() + 15 * 60 * 1000);
-        console.log("Delete Time: " + deleteTime.toISOString());
+
+        const scheduleExpression: string =
+            "cron(" +
+            deleteTime.getUTCMinutes() + " " +
+            deleteTime.getUTCHours() + " " +
+            deleteTime.getUTCDate() + " " +
+            (deleteTime.getUTCMonth() + 1) + " " +
+            "? " +
+            "*" +
+            ")";
+
+        console.log("Delete Time: " + scheduleExpression);
 
         const createStackParams: CreateStackInput = {
             StackName: "voipms-test-" + buildName,
@@ -149,8 +160,8 @@ function deployBuildInTestAccount(): Promise<void> {
                     ParameterValue: process.env.LAMBCI_COMMIT,
                 },
                 {
-                    ParameterKey: "SelfDestructTime",
-                    ParameterValue: deleteTime.toISOString(),
+                    ParameterKey: "SelfDestructScheduleExpression",
+                    ParameterValue: scheduleExpression,
                 },
             ],
             DisableRollback: true,

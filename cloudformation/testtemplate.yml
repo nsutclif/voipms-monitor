@@ -13,7 +13,7 @@ Parameters:
     NoEcho: true
   CommitHash:
     Type: String
-  SelfDestructTime:
+  SelfDestructScheduleExpression:
     Type: String
 
 Conditions:
@@ -245,7 +245,7 @@ Resources:
     Type: AWS::Events::Rule
     Condition: CreateSelfDestruct
     Properties:
-      ScheduleExpression: SelfDestructTime
+      ScheduleExpression: SelfDestructScheduleExpression
       Targets:
       - Id: PollLambdaTarget
         Arn:
