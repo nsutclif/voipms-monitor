@@ -249,7 +249,7 @@ Resources:
       Targets:
       - Id: PollLambdaTarget
         Arn:
-          Fn::GetAtt: [CollectorFunction, Arn]
+          Fn::GetAtt: [SelfDestructLambda, Arn]
   # Allow Cloudwatch Event to trigger Lambda:
   SelfDestructEventPermission:
     Type: AWS::Lambda::Permission
