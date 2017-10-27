@@ -245,7 +245,8 @@ Resources:
     Type: AWS::Events::Rule
     Condition: CreateSelfDestruct
     Properties:
-      ScheduleExpression: SelfDestructScheduleExpression
+      ScheduleExpression: 
+        Ref: SelfDestructScheduleExpression
       Targets:
       - Id: PollLambdaTarget
         Arn:

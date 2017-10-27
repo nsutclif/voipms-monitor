@@ -130,7 +130,7 @@ function deployBuildInTestAccount(): Promise<void> {
             deleteTime.getUTCDate() + " " +
             (deleteTime.getUTCMonth() + 1) + " " +
             "? " +
-            "*" +
+            deleteTime.getUTCFullYear() +
             ")";
 
         console.log("Delete Time: " + scheduleExpression);
