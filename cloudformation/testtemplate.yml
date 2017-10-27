@@ -20,7 +20,7 @@ Conditions:
   CreateSelfDestruct:
     Fn::Not:
     - Fn::Equals:
-      - Ref: SelfDestructTime
+      - Ref: SelfDestructScheduleExpression
       - ''
 
 Resources:
