@@ -27,7 +27,7 @@ Resources:
   # Nested stacks cannot contain Transforms!  Can't use Serverless Application Model for nested stacks :-(
   GitHubStatusCustomResourceStack:
     Type: AWS::CloudFormation::Stack
-    DependsOn: SelfDestructLambdaExecutionRole
+    DependsOn: SelfDestructLambdaExecutionRole # The execution role must still exist for this to be deleted by the self destruct Lamb
     Properties:
       Parameters:
         StackTemplateBucketName:
@@ -38,7 +38,7 @@ Resources:
         Fn::Sub: https://s3.${AWS::URLSuffix}/${StackTemplateBucketName}/${StackTemplateBucketKeyPrefix}/githubstatus-shared-template.yml
   PendingStatus:
     Type: Custom::GitHubStatus
-    DependsOn: SelfDestructLambdaExecutionRole
+    DependsOn: SelfDestructLambdaExecutionRole # The execution role must still exist for this to be deleted by the self destruct Lamb
     Properties:
       ServiceToken:
         Fn::GetAtt: [GitHubStatusCustomResourceStack, Outputs.GitHubStatusFunctionArn]
@@ -57,7 +57,7 @@ Resources:
   # Nested stacks cannot contain Transforms!  Can't use Serverless Application Model for nested stacks :-(
   BadPasswordStack:
     Type: AWS::CloudFormation::Stack
-    DependsOn: SelfDestructLambdaExecutionRole
+    DependsOn: SelfDestructLambdaExecutionRole # The execution role must still exist for this to be deleted by the self destruct Lamb
     Properties:
       Parameters:
         StackTemplateBucketName:
@@ -73,7 +73,7 @@ Resources:
         Fn::Sub: https://s3.${AWS::URLSuffix}/${StackTemplateBucketName}/${StackTemplateBucketKeyPrefix}/template.yml
   SNSMessageCollectorStack:
     Type: AWS::CloudFormation::Stack
-    DependsOn: SelfDestructLambdaExecutionRole
+    DependsOn: SelfDestructLambdaExecutionRole # The execution role must still exist for this to be deleted by the self destruct Lamb
     Properties:
       Parameters:
         StackTemplateBucketName:
@@ -88,7 +88,7 @@ Resources:
         Fn::Sub: https://s3.${AWS::URLSuffix}/${StackTemplateBucketName}/${StackTemplateBucketKeyPrefix}/snsmessagecollectortemplate.yml
   BadPasswordTestPolicy:
     Type: AWS::IAM::ManagedPolicy
-    DependsOn: SelfDestructLambdaExecutionRole
+    DependsOn: SelfDestructLambdaExecutionRole # The execution role must still exist for this to be deleted by the self destruct Lamb
     Properties:
       PolicyDocument:
         Version: "2012-10-17"
@@ -104,7 +104,7 @@ Resources:
   # CfnTest custom resources:
   CfnTestStack:
     Type: AWS::CloudFormation::Stack
-    DependsOn: SelfDestructLambdaExecutionRole
+    DependsOn: SelfDestructLambdaExecutionRole # The execution role must still exist for this to be deleted by the self destruct Lamb
     Properties:
       TemplateURL:
         Fn::Sub: https://s3.${AWS::URLSuffix}/${StackTemplateBucketName}/${StackTemplateBucketKeyPrefix}/cfn-test-instance-template.yml
@@ -132,7 +132,7 @@ Resources:
   # TODO: Just make it all buckets and put this in shared stack?
   CfnReportPolicy:
     Type: AWS::IAM::ManagedPolicy
-    DependsOn: SelfDestructLambdaExecutionRole
+    DependsOn: SelfDestructLambdaExecutionRole # The execution role must still exist for this to be deleted by the self destruct Lamb
     Properties:
       PolicyDocument:
         Version: "2012-10-17"
@@ -146,7 +146,7 @@ Resources:
         Fn::Sub: ${AWS::StackName}-CfnReportPolicy
   CfnTestSharedStack:
     Type: AWS::CloudFormation::Stack
-    DependsOn: SelfDestructLambdaExecutionRole
+    DependsOn: SelfDestructLambdaExecutionRole # The execution role must still exist for this to be deleted by the self destruct Lamb
     Properties:
       TemplateURL:
         Fn::Sub: https://s3.${AWS::URLSuffix}/${StackTemplateBucketName}/${StackTemplateBucketKeyPrefix}/cfn-test-shared-template.yml
@@ -159,7 +159,7 @@ Resources:
           Ref: CfnReportPolicy
   TestReport:
     Type: Custom::TestReport
-    DependsOn: SelfDestructLambdaExecutionRole
+    DependsOn: SelfDestructLambdaExecutionRole # The execution role must still exist for this to be deleted by the self destruct Lamb
     Properties:
       ServiceToken:
         Fn::GetAtt: [CfnTestSharedStack, Outputs.CfnTestReportFunctionArn]
@@ -171,7 +171,7 @@ Resources:
         Fn::GetAtt: [CfnTestStack, Outputs.TestResult]
   CompleteStatus:
     Type: Custom::GitHubStatus
-    DependsOn: SelfDestructLambdaExecutionRole
+    DependsOn: SelfDestructLambdaExecutionRole # The execution role must still exist for this to be deleted by the self destruct Lamb
     Properties:
       ServiceToken:
         Fn::GetAtt: [GitHubStatusCustomResourceStack, Outputs.GitHubStatusFunctionArn]
@@ -265,7 +265,7 @@ Resources:
   # Create a log group for the Lambda function so that it gets deleted when the stack is deleted.
   SelfDestructLambdaLogGroup:
     Type: AWS::Logs::LogGroup
-    DependsOn: SelfDestructLambdaExecutionRole
+    DependsOn: SelfDestructLambdaExecutionRole # The execution role must still exist for this to be deleted by the self destruct Lamb
     Properties:
       LogGroupName:
         Fn::Sub: /aws/lambda/${SelfDestructLambda}
