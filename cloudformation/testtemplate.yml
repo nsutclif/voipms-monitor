@@ -227,7 +227,9 @@ Resources:
                 - lambda:RemovePermission # arn:aws:lambda:us-east-1:729398747886:function:voipms-test-630-SelfDestructLambda-UMOHLVWQN84P
                 - logs:DeleteLogGroup
                 - sns:DeleteTopic
+                - sns:ListSubscriptionsByTopic # arn:aws:sns:us-east-1:729398747886:voipms-test-634-BadPasswordStack-KN3ZFAV8QE2F-RegistrationStatusChangeTopic-15FC3Y6PJRGQ9
                 - sqs:DeleteQueue
+                - sqs:SetQueueAttributes # https://sqs.us-east-1.amazonaws.com/729398747886/voipms-test-634-SNSMessageCollectorStack-1J7YI9CZDTIM-ResultsQueue-8FXIXFIYH23M
               Resource:
                 "*" # TODO: Improve
   SelfDestructLambda:
