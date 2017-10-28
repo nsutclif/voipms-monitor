@@ -220,30 +220,38 @@ Resources:
         PolicyDocument:
           Version: "2012-10-17"
           Statement:
-            - Effect: Allow
-              Action:
-                - cloudformation:DeleteStack
-                - cloudformation:* # testing
-                - dynamodb:DeleteTable
-                - events:DeleteRule # arn:aws:events:us-east-1:729398747886:rule/voipms-test-632-SelfDestructEvent-11QAJ5RX1J5AZ
-                - events:RemoveTargets # arn:aws:events:us-east-1:729398747886:rule/voipms-test-630-SelfDestructEvent-D3ZI90HEZKN
-                - iam:DeletePolicy
-                - iam:DeleteRole
-                - iam:DeleteRolePolicy
-                - iam:DetachRolePolicy
-                - iam:ListPolicyVersions # arn:aws:iam::729398747886:policy/voipms-test-632-CfnReportPolicy
-                - iam:GetPolicy # arn:aws:iam::729398747886:policy/voipms-test-630-BadPasswordTestPolicy
-                - lambda:DeleteFunction
-                - lambda:InvokeFunction # for executing custom resources
-                - lambda:RemovePermission # arn:aws:lambda:us-east-1:729398747886:function:voipms-test-630-SelfDestructLambda-UMOHLVWQN84P
-                - logs:DeleteLogGroup
-                - sns:DeleteTopic
-                - sns:ListSubscriptionsByTopic # arn:aws:sns:us-east-1:729398747886:voipms-test-634-BadPasswordStack-KN3ZFAV8QE2F-RegistrationStatusChangeTopic-15FC3Y6PJRGQ9
-                - sns:Unsubscribe # arn:aws:sns:us-east-1:729398747886:voipms-test-636-BadPasswordStack-1BK9A95O2C0QP-RegistrationStatusChangeTopic-1CZDP6VP8O0OM
-                - sqs:DeleteQueue
-                - sqs:SetQueueAttributes # https://sqs.us-east-1.amazonaws.com/729398747886/voipms-test-634-SNSMessageCollectorStack-1J7YI9CZDTIM-ResultsQueue-8FXIXFIYH23M
-              Resource:
-                "*" # TODO: Improve
+          - Effect: Allow
+            Action:
+            - cloudformation:DeleteStack
+            - cloudformation:* # testing
+            - dynamodb:DeleteTable
+            - events:DeleteRule # arn:aws:events:us-east-1:729398747886:rule/voipms-test-632-SelfDestructEvent-11QAJ5RX1J5AZ
+            - events:RemoveTargets # arn:aws:events:us-east-1:729398747886:rule/voipms-test-630-SelfDestructEvent-D3ZI90HEZKN
+            - lambda:DeleteFunction
+            - lambda:InvokeFunction # for executing custom resources
+            - lambda:RemovePermission # arn:aws:lambda:us-east-1:729398747886:function:voipms-test-630-SelfDestructLambda-UMOHLVWQN84P
+            - logs:DeleteLogGroup
+            - sns:DeleteTopic
+            - sns:ListSubscriptionsByTopic # arn:aws:sns:us-east-1:729398747886:voipms-test-634-BadPasswordStack-KN3ZFAV8QE2F-RegistrationStatusChangeTopic-15FC3Y6PJRGQ9
+            - sns:Unsubscribe # arn:aws:sns:us-east-1:729398747886:voipms-test-636-BadPasswordStack-1BK9A95O2C0QP-RegistrationStatusChangeTopic-1CZDP6VP8O0OM
+            - sqs:DeleteQueue
+            - sqs:SetQueueAttributes # https://sqs.us-east-1.amazonaws.com/729398747886/voipms-test-634-SNSMessageCollectorStack-1J7YI9CZDTIM-ResultsQueue-8FXIXFIYH23M
+            Resource:
+              "*" # TODO: Improve
+          - Effect: Allow
+            Action:
+            - iam:DeletePolicy
+            - iam:ListPolicyVersions
+            - iam:GetPolicy
+            Resource:
+              Fn::Sub: "arn:aws:iam::729398747886:policy/${IAM:StackName}"
+          - Effect: Allow
+            Action:
+            - iam:DeleteRole
+            - iam:DeleteRolePolicy
+            - iam:DetachRolePolicy
+            Resource:
+              Fn::Sub: "arn:aws:iam::729398747886:role/${IAM:StackName}"
   SelfDestructLambda:
     Type: AWS::Lambda::Function
     Condition: CreateSelfDestruct
