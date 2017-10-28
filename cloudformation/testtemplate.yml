@@ -244,14 +244,14 @@ Resources:
             - iam:ListPolicyVersions
             - iam:GetPolicy
             Resource:
-              Fn::Sub: "arn:aws:iam::729398747886:policy/${AWS::StackName}"
+              Fn::Sub: "arn:aws:iam::${AWS::AccountId}:policy/${AWS::StackName}*"
           - Effect: Allow
             Action:
             - iam:DeleteRole
             - iam:DeleteRolePolicy
             - iam:DetachRolePolicy
             Resource:
-              Fn::Sub: "arn:aws:iam::729398747886:role/${AWS::StackName}"
+              Fn::Sub: "arn:aws:iam::${AWS::AccountId}:role/${AWS::StackName}*"
   SelfDestructLambda:
     Type: AWS::Lambda::Function
     Condition: CreateSelfDestruct
