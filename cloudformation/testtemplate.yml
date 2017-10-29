@@ -234,6 +234,7 @@ Resources:
             - sns:DeleteTopic
             - sns:ListSubscriptionsByTopic # arn:aws:sns:us-east-1:729398747886:voipms-test-634-BadPasswordStack-KN3ZFAV8QE2F-RegistrationStatusChangeTopic-15FC3Y6PJRGQ9
             - sns:Unsubscribe # arn:aws:sns:us-east-1:729398747886:voipms-test-636-BadPasswordStack-1BK9A95O2C0QP-RegistrationStatusChangeTopic-1CZDP6VP8O0OM
+            - sns:SetTopicAttributes
             - sqs:DeleteQueue
             - sqs:SetQueueAttributes # https://sqs.us-east-1.amazonaws.com/729398747886/voipms-test-634-SNSMessageCollectorStack-1J7YI9CZDTIM-ResultsQueue-8FXIXFIYH23M
             Resource:
@@ -244,6 +245,7 @@ Resources:
             - iam:ListPolicyVersions
             - iam:GetPolicy
             Resource:
+              # Only allow deleting policies created by this stack
               Fn::Sub: "arn:aws:iam::${AWS::AccountId}:policy/${AWS::StackName}*"
           - Effect: Allow
             Action:
@@ -251,6 +253,7 @@ Resources:
             - iam:DeleteRolePolicy
             - iam:DetachRolePolicy
             Resource:
+              # Only allow deleting roles created by this stack
               Fn::Sub: "arn:aws:iam::${AWS::AccountId}:role/${AWS::StackName}*"
   SelfDestructLambda:
     Type: AWS::Lambda::Function
