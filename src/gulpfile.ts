@@ -121,7 +121,7 @@ function deployBuildInTestAccount(): Promise<void> {
         const cf = new AWS.CloudFormation({credentials});
 
         const deleteTime: Date = new Date();
-        deleteTime.setTime(deleteTime.getTime() + 15 * 60 * 1000);
+        deleteTime.setTime(deleteTime.getTime() + 30 * 60 * 1000);
 
         const scheduleExpression: string =
             "cron(" +
