@@ -235,7 +235,7 @@ Resources:
               "*" # TODO: Improve
           - Effect: Allow
             Action:
-            - dynamo:*
+            - dynamodb:*
             Resource: #
             - Fn::Sub: "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${AWS::StackName}*"
           - Effect: Allow
