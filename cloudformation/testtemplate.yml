@@ -218,21 +218,17 @@ Resources:
       - PolicyName: DeleteStack
         PolicyDocument:
           Version: "2012-10-17"
+          # This policy compromises least privilege for the sake of maintainability.
+          # It's a lot of work to determine exactly which permissions are needed to delete
+          # the stack and a lot of work to maintain a list of specific resources within the stack.
+          # This policy grants broad control over resources created as part of the stack by
+          # relying on them being named after the stack
           Statement:
           - Effect: Allow
             Action:
             - cloudformation:DeleteStack
-            - cloudformation:* # testing
-            - events:DeleteRule # arn:aws:events:us-east-1:729398747886:rule/voipms-test-632-SelfDestructEvent-11QAJ5RX1J5AZ
-            - events:RemoveTargets # arn:aws:events:us-east-1:729398747886:rule/voipms-test-630-SelfDestructEvent-D3ZI90HEZKN
-            - lambda:DeleteFunction
-            - lambda:InvokeFunction # for executing custom resources
-            - lambda:RemovePermission # arn:aws:lambda:us-east-1:729398747886:function:voipms-test-630-SelfDestructLambda-UMOHLVWQN84P
-            - logs:DeleteLogGroup
-            - sqs:DeleteQueue
-            - sqs:SetQueueAttributes # https://sqs.us-east-1.amazonaws.com/729398747886/voipms-test-634-SNSMessageCollectorStack-1J7YI9CZDTIM-ResultsQueue-8FXIXFIYH23M
-            Resource:
-              "*" # TODO: Improve
+            Resource: #
+            - Fn::Sub: "arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/${AWS::StackName}*"
           - Effect: Allow
             Action:
             - dynamodb:*
@@ -240,9 +236,9 @@ Resources:
             - Fn::Sub: "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${AWS::StackName}*"
           - Effect: Allow
             Action:
-            - sns:*
-            Resource:
-            - Fn::Sub: "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:${AWS::StackName}*"
+            - events:*
+            Resource: #
+            - Fn::Sub: "arn:aws:events:${AWS::Region}:${AWS::AccountId}:rule/${AWS::StackName}*"
           - Effect: Allow
             Action:
             - iam:DeletePolicy
@@ -259,6 +255,26 @@ Resources:
             Resource:
               # Only allow deleting roles created by this stack
               Fn::Sub: "arn:aws:iam::${AWS::AccountId}:role/${AWS::StackName}*"
+          - Effect: Allow
+            Action:
+            - lambda:*
+            Resource: #
+            - Fn::Sub: "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${AWS::StackName}*"
+          - Effect: Allow
+            Action:
+            - logs:*
+            Resource: #
+            - Fn::Sub: "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:${AWS::StackName}*"
+          - Effect: Allow
+            Action:
+            - sns:*
+            Resource:
+            - Fn::Sub: "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:${AWS::StackName}*"
+          - Effect: Allow
+            Action:
+            - sqs:*
+            Resource: #
+            - Fn::Sub: "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${AWS::StackName}*"
   SelfDestructLambda:
     Type: AWS::Lambda::Function
     Condition: CreateSelfDestruct
