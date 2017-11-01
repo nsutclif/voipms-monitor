@@ -34,8 +34,6 @@ function runTest(testParameters: any): Promise<void> {
         expect(snsNotification.Subject).to.equal("Voip.ms registration status change");
         expect(snsNotification.Message).to.equal("Error checking registration status: invalid_credentials");
 
-        expect(result.Messages[0].Body).to.be.an("array"); // force a failure
-
         return Promise.resolve();
     });
 }
