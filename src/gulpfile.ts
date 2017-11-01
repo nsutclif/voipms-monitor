@@ -120,6 +120,21 @@ function deployBuildInTestAccount(): Promise<void> {
 
         const cf = new AWS.CloudFormation({credentials});
 
+        const deleteTime: Date = new Date();
+        deleteTime.setTime(deleteTime.getTime() + 30 * 60 * 1000);
+
+        const scheduleExpression: string =
+            "cron(" +
+            deleteTime.getUTCMinutes() + " " +
+            deleteTime.getUTCHours() + " " +
+            deleteTime.getUTCDate() + " " +
+            (deleteTime.getUTCMonth() + 1) + " " +
+            "? " +
+            deleteTime.getUTCFullYear() +
+            ")";
+
+        console.log("Delete Time: " + scheduleExpression);
+
         const createStackParams: CreateStackInput = {
             StackName: "voipms-test-" + buildName,
             TemplateURL: constructS3URL(TEST_BUCKET_NAME, [buildName, TEST_TEMPLATE_NAME].join("/")),
@@ -143,6 +158,10 @@ function deployBuildInTestAccount(): Promise<void> {
                 {
                     ParameterKey: "CommitHash",
                     ParameterValue: process.env.LAMBCI_COMMIT,
+                },
+                {
+                    ParameterKey: "SelfDestructScheduleExpression",
+                    ParameterValue: scheduleExpression,
                 },
             ],
             DisableRollback: true,
