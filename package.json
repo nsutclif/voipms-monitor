@@ -38,7 +38,7 @@
     "gulp": "3.9.1",
     "gulp-s3-upload": "1.7.0",
     "gulp-zip": "4.1.0",
-    "tslint": "5.8.0",
+    "tslint": "5.9.0",
     "typescript": "2.6.2"
   },
   "greenkeeper": {
