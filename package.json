@@ -33,7 +33,7 @@
     "@types/gulp": "4.0.5",
     "@types/node": "7.0.29",
     "@types/request-promise-native": "1.0.10",
-    "@types/request": "2.0.12",
+    "@types/request": "2.0.13",
     "aws-sdk": "2.185.0",
     "gulp": "3.9.1",
     "gulp-s3-upload": "1.7.0",
