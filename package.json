@@ -29,7 +29,7 @@
   },
   "devDependencies": {
     "@types/chai": "4.1.2",
-    "@types/aws-lambda": "0.0.27",
+    "@types/aws-lambda": "0.0.29",
     "@types/gulp": "4.0.5",
     "@types/node": "7.0.29",
     "@types/request-promise-native": "1.0.11",
