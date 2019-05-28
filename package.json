@@ -37,7 +37,7 @@
     "aws-sdk": "2.356.0",
     "gulp": "3.9.1",
     "gulp-s3-upload": "1.7.0",
-    "gulp-zip": "4.2.0",
+    "gulp-zip": "5.0.0",
     "tslint": "5.9.0",
     "typescript": "2.6.2"
   },
